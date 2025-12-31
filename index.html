@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #000; color: white; user-select: none; }
+        .card { background: #111; border: 1px solid #222; border-radius: 16px; }
+        .loader { border: 4px solid #333; border-top: 4px solid #00ff88; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="p-6">
+
+    <div id="loading" class="fixed inset-0 flex flex-col items-center justify-center bg-black z-50">
+        <div class="loader mb-4"></div>
+        <p id="status" class="text-xs text-gray-500 font-mono uppercase">Соединение...</p>
+    </div>
+
+    <div id="error" class="hidden fixed inset-0 flex flex-col items-center justify-center bg-black z-40 px-6 text-center">
+        <div class="text-red-500 text-5xl mb-4">⛔</div>
+        <p id="error-msg" class="text-gray-400 text-xs font-mono mb-6">Ошибка</p>
+        <button onclick="location.reload()" class="bg-gray-800 text-white px-6 py-3 rounded-xl text-xs uppercase font-bold">Обновить</button>
+    </div>
+
+    <div id="content" class="hidden pb-10">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-2xl font-black italic uppercase">ШТАБ<span class="text-[#00ff88]">.</span></h1>
+            <div class="text-right">
+                <h2 id="u-name" class="text-lg font-black uppercase italic text-[#00ff88]">...</h2>
+                <p class="text-[9px] text-gray-500 uppercase font-bold">Профиль</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mb-4">
+            <div class="card p-4 border-l-2 border-[#00ff88]">
+                <p class="text-[9px] text-gray-500 uppercase font-bold mb-1">Занятий</p>
+                <p id="u-count" class="text-3xl font-black italic">0</p>
+            </div>
+            <div class="card p-4 border-l-2 border-blue-500">
+                <p class="text-[9px] text-gray-500 uppercase font-bold mb-1">Вода (Л)</p>
+                <p id="u-water" class="text-3xl font-black italic text-blue-400">0</p>
+            </div>
+        </div>
+
+        <div class="card p-4 mb-8 flex justify-between items-center">
+            <div>
+                <p class="text-[9px] text-gray-500 uppercase font-bold mb-1">Ср. Время</p>
+                <p id="u-time" class="text-xl font-black italic uppercase">0 МИН</p>
+            </div>
+            <div class="text-right">
+                <p class="text-[9px] text-gray-500 uppercase font-bold mb-1">Статус</p>
+                <p class="text-[#00ff88] font-black italic text-lg uppercase">ACTIVE</p>
+            </div>
+        </div>
+
+        <h3 class="text-[10px] text-gray-600 uppercase font-bold mb-3 tracking-widest text-center">РЕКОРДЫ</h3>
+        <div id="u-records" class="space-y-2"></div>
+    </div>
+
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycby95bCwV-VYPgbqumu67NTHSfRG7fFYk4M1r7mK_q6qx8GrLdpoFEPkM4vqfhmqqwrW/exec"; 
+        
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        window.onload = function() {
+            const user = tg.initDataUnsafe?.user;
+            
+            if (!user || !user.id) {
+                showError("Нет доступа к Telegram ID. Запустите через бота.");
+                return;
+            }
+
+            document.getElementById('status').innerText = "Проверка ID: " + user.id;
+
+            // Отправляем запрос на Google Script (как API)
+            fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({ userId: user.id })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    render(data);
+                } else {
+                    showError(data.error);
+                }
+            })
+            .catch(err => {
+                showError("Ошибка связи с таблицей: " + err);
+            });
+        };
+
+        function render(data) {
+            document.getElementById('u-name').innerText = data.name;
+            
+            if (data.empty) {
+                document.getElementById('u-records').innerHTML = '<div class="text-center text-gray-600 text-xs py-10">Пусто</div>';
+            } else {
+                document.getElementById('u-count').innerText = data.totalWorkouts;
+                document.getElementById('u-water').innerText = (data.totalWater / 1000).toFixed(1);
+                document.getElementById('u-time').innerText = data.avgTime + " МИН";
+
+                document.getElementById('u-records').innerHTML = data.records.map(r => `
+                    <div class="card p-4 flex justify-between items-center border-b border-white/5">
+                        <div>
+                            <p class="text-[8px] text-[#00ff88] uppercase font-bold mb-1">${r.reps} ПОВТ</p>
+                            <p class="text-xs font-black uppercase italic text-gray-200">${r.name}</p>
+                        </div>
+                        <p class="text-xl font-black italic text-white">${r.weight} <span class="text-[9px] text-[#00ff88]">КГ</span></p>
+                    </div>
+                `).join('');
+            }
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('content').classList.remove('hidden');
+        }
+
+        function showError(msg) {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('error').classList.remove('hidden');
+            document.getElementById('error-msg').innerText = msg;
+        }
+    </script>
+</body>
+</html>
