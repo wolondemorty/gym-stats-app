@@ -5,15 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         body { background: #000; color: #fff; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
-        .glass-card { background: #0A0A0A; border: 1px solid #141414; border-radius: 24px; }
-        .record-card { background: #080808; border: 1px solid #111; border-radius: 20px; }
+        .stat-card { background: #0A0A0A; border: 1px solid #141414; border-radius: 24px; }
+        .record-item { border-bottom: 1px solid #0F0F0F; }
         .loader { border: 2px solid #111; border-top: 2px solid #fff; border-radius: 50%; width: 24px; height: 24px; animation: spin 0.8s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="px-6 pb-12 select-none">
@@ -22,72 +20,66 @@
         <div class="loader"></div>
     </div>
 
-    <div id="content" class="hidden fade-in">
-        <div class="flex items-center space-x-5 mt-10 mb-8">
+    <div id="content" class="hidden">
+        <div class="flex items-center space-x-5 mt-10 mb-10">
             <div class="relative">
-                <img id="u-photo" src="" class="hidden w-20 h-20 rounded-full object-cover border-2 border-[#1A1A1A]">
+                <img id="u-photo" src="" class="hidden w-20 h-20 rounded-full object-cover border border-white/10">
                 <div id="u-initials" class="w-20 h-20 rounded-full bg-zinc-900 flex items-center justify-center border border-white/5 text-2xl font-bold text-zinc-500">..</div>
             </div>
             <div>
-                <h1 id="u-name" class="text-2xl font-extrabold tracking-tight">...</h1>
-                <div class="flex flex-col mt-1">
+                <h1 id="u-name" class="text-2xl font-black tracking-tight leading-none">...</h1>
+                <div class="flex flex-col mt-2">
                     <span class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Администратор</span>
-                    <span id="u-sheet" class="text-[9px] text-zinc-600 font-medium mt-0.5">Лист: загрузка...</span>
+                    <span id="u-sheet" class="text-[9px] text-zinc-600 font-medium mt-0.5 italic">...</span>
                 </div>
             </div>
         </div>
 
         <div class="grid grid-cols-2 gap-4 mb-4">
-            <div class="glass-card p-6">
+            <div class="stat-card p-6">
                 <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-2">Тренировки</p>
-                <p id="u-count" class="text-4xl font-bold tracking-tighter">0</p>
+                <p id="u-count" class="text-4xl font-bold tracking-tighter italic">0</p>
             </div>
-            <div class="glass-card p-6">
+            <div class="stat-card p-6">
                 <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-2">Вода (Л)</p>
-                <p id="u-water" class="text-4xl font-bold tracking-tighter text-blue-500">0</p>
+                <p id="u-water" class="text-4xl font-bold tracking-tighter text-blue-500 italic">0</p>
             </div>
         </div>
 
-        <div class="glass-card p-6 mb-12 flex justify-between items-center text-sm font-bold">
-            <div class="flex flex-col">
-                <span class="text-[10px] text-zinc-500 uppercase mb-1">Среднее время</span>
-                <span id="u-time">0 мин</span>
-            </div>
-            <div class="h-8 w-px bg-zinc-900"></div>
-            <div class="flex flex-col text-right">
-                <span class="text-[10px] text-zinc-500 uppercase mb-1">Статус</span>
-                <span class="text-[#00E676]">Online</span>
-            </div>
+        <div class="stat-card p-6 mb-12">
+            <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-1">Среднее время тренировки</p>
+            <p id="u-time" class="text-xl font-bold italic">0 мин</p>
         </div>
 
-        <h2 class="text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-6 px-1">Личные рекорды</h2>
+        <div class="flex items-center space-x-4 mb-6">
+            <h2 class="text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em]">Личные рекорды</h2>
+            <div class="h-px bg-zinc-900 flex-grow"></div>
+        </div>
         
-        <div id="u-records" class="space-y-3"></div>
+        <div id="u-records" class="space-y-0"></div>
     </div>
 
     <script>
-        // ЗАМЕНИ НА СВОЙ URL
-        const GAS_URL = "https://script.google.com/macros/s/AKfycby95bCwV-VYPgbqumu67NTHSfRG7fFYk4M1r7mK_q6qx8GrLdpoFEPkM4vqfhmqqwrW/exec"; 
+        const GAS_URL = "ТВОЙ_URL_ЗДЕСЬ"; 
         const tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
 
         window.onload = function() {
             const userId = tg.initDataUnsafe?.user?.id;
-            if (!userId) { document.getElementById('loading').innerHTML = "Ошибка: ID не найден"; return; }
+            if (!userId) { document.body.innerHTML = "ID не найден"; return; }
 
             fetch(`${GAS_URL}?id=${userId}`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) render(data);
-                    else alert("Ошибка: " + data.error);
-                })
-                .catch(() => alert("Ошибка подключения к скрипту"));
+                    else alert(data.error);
+                });
         };
 
         function render(data) {
             document.getElementById('u-name').innerText = data.name;
-            document.getElementById('u-sheet').innerText = "Прикреплен: " + data.sheet;
+            document.getElementById('u-sheet').innerText = "Лист: " + data.sheet;
             
             if (data.photo) {
                 const img = document.getElementById('u-photo');
@@ -102,16 +94,16 @@
             document.getElementById('u-time').innerText = data.avgTime + " мин";
 
             if (data.empty) {
-                document.getElementById('u-records').innerHTML = '<p class="text-zinc-700 text-xs py-10 text-center uppercase tracking-widest">Нет данных</p>';
+                document.getElementById('u-records').innerHTML = '<p class="text-zinc-700 text-xs py-10 text-center uppercase tracking-widest italic">Нет данных</p>';
             } else {
                 document.getElementById('u-records').innerHTML = data.records.map(r => `
-                    <div class="record-card p-5 flex justify-between items-center border border-white/5">
+                    <div class="flex justify-between items-center py-5 border-b border-zinc-900">
                         <div class="pr-4 overflow-hidden">
-                            <p class="text-[10px] text-zinc-500 font-bold uppercase mb-1 tracking-wider">${r.reps} повт.</p>
-                            <h3 class="text-sm font-bold text-white uppercase italic truncate">${r.name}</h3>
+                            <p class="text-[10px] text-zinc-500 font-bold uppercase mb-1 tracking-wider">${r.reps} повторений</p>
+                            <h3 class="text-sm font-bold text-white uppercase italic leading-tight truncate">${r.name}</h3>
                         </div>
-                        <div class="text-right min-w-[70px]">
-                            <p class="text-2xl font-black tracking-tighter">${r.weight}<span class="text-[10px] text-zinc-600 ml-1 font-bold">KG</span></p>
+                        <div class="text-right min-w-[90px]">
+                            <p class="text-2xl font-black tracking-tighter">${r.weight}<span class="text-[10px] text-zinc-600 ml-1 font-bold">КГ</span></p>
                         </div>
                     </div>
                 `).join('');
