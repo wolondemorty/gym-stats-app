@@ -2,125 +2,196 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #000; color: white; user-select: none; }
-        .card { background: #111; border: 1px solid #222; border-radius: 16px; }
-        .loader { border: 4px solid #333; border-top: 4px solid #00ff88; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        :root { --accent: #D4AF37; --bg: #050505; --card: #121212; --glass: rgba(255, 255, 255, 0.03); }
+        body { background-color: var(--bg); color: #e0e0e0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
+        
+        /* Анимации */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseGlow { 0% { box-shadow: 0 0 5px rgba(212, 175, 55, 0.2); } 50% { box-shadow: 0 0 20px rgba(212, 175, 55, 0.5); } 100% { box-shadow: 0 0 5px rgba(212, 175, 55, 0.2); } }
+        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .fade-in { animation: fadeIn 0.6s ease-out forwards; }
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+
+        /* Стили карточек */
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        
+        .stat-value {
+            background: linear-gradient(90deg, #fff, #bbb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .gold-text { color: var(--accent); text-shadow: 0 0 15px rgba(212, 175, 55, 0.3); }
+
+        /* Лоадер */
+        .bio-loader {
+            width: 200px; height: 2px; background: #222; border-radius: 2px; overflow: hidden; position: relative;
+        }
+        .bio-loader::after {
+            content: ''; position: absolute; top: 0; left: 0; width: 0%; height: 100%;
+            background: var(--accent); box-shadow: 0 0 10px var(--accent);
+            animation: load 2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        @keyframes load { to { width: 100%; } }
     </style>
 </head>
-<body class="p-6">
+<body class="min-h-screen flex flex-col px-5 py-6">
 
-    <div id="loading" class="fixed inset-0 flex flex-col items-center justify-center bg-black z-50">
-        <div class="loader mb-4"></div>
-        <p id="status" class="text-xs text-gray-500 font-mono uppercase">Соединение...</p>
+    <div id="loading" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050505]">
+        <div class="text-center space-y-4">
+            <h1 class="text-4xl font-black tracking-tighter uppercase italic">GYM<span class="gold-text">.PRO</span></h1>
+            <p id="status" class="text-[10px] font-mono text-gray-500 tracking-[0.3em] uppercase">Authenticating ID...</p>
+            <div class="bio-loader mt-6"></div>
+        </div>
     </div>
 
-    <div id="error" class="hidden fixed inset-0 flex flex-col items-center justify-center bg-black z-40 px-6 text-center">
-        <div class="text-red-500 text-5xl mb-4">⛔</div>
-        <p id="error-msg" class="text-gray-400 text-xs font-mono mb-6">Ошибка</p>
-        <button onclick="location.reload()" class="bg-gray-800 text-white px-6 py-3 rounded-xl text-xs uppercase font-bold">Обновить</button>
+    <div id="error" class="hidden fixed inset-0 z-40 flex flex-col items-center justify-center bg-black/90 backdrop-blur-md px-6 text-center">
+        <div class="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4 border border-red-500/20">
+            <span class="text-2xl">⚠️</span>
+        </div>
+        <h2 class="text-white font-bold text-lg mb-2">Access Denied</h2>
+        <p id="error-msg" class="text-gray-400 text-xs font-mono mb-6 bg-[#111] p-4 rounded-lg border border-white/5"></p>
+        <button onclick="location.reload()" class="bg-white text-black px-8 py-3 rounded-full text-xs font-bold uppercase tracking-widest hover:scale-105 transition-transform">Retry</button>
     </div>
 
-    <div id="content" class="hidden pb-10">
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-2xl font-black italic uppercase">ШТАБ<span class="text-[#00ff88]">.</span></h1>
-            <div class="text-right">
-                <h2 id="u-name" class="text-lg font-black uppercase italic text-[#00ff88]">...</h2>
-                <p class="text-[9px] text-gray-500 uppercase font-bold">Профиль</p>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3 mb-4">
-            <div class="card p-4 border-l-2 border-[#00ff88]">
-                <p class="text-[9px] text-gray-500 uppercase font-bold mb-1">Занятий</p>
-                <p id="u-count" class="text-3xl font-black italic">0</p>
-            </div>
-            <div class="card p-4 border-l-2 border-blue-500">
-                <p class="text-[9px] text-gray-500 uppercase font-bold mb-1">Вода (Л)</p>
-                <p id="u-water" class="text-3xl font-black italic text-blue-400">0</p>
-            </div>
-        </div>
-
-        <div class="card p-4 mb-8 flex justify-between items-center">
+    <div id="content" class="hidden flex-1 flex flex-col max-w-md mx-auto w-full pt-4">
+        
+        <div class="flex justify-between items-end mb-8 fade-in">
             <div>
-                <p class="text-[9px] text-gray-500 uppercase font-bold mb-1">Ср. Время</p>
-                <p id="u-time" class="text-xl font-black italic uppercase">0 МИН</p>
+                <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Welcome back</p>
+                <h1 id="u-name" class="text-3xl font-black text-white leading-none">Loading...</h1>
             </div>
-            <div class="text-right">
-                <p class="text-[9px] text-gray-500 uppercase font-bold mb-1">Статус</p>
-                <p class="text-[#00ff88] font-black italic text-lg uppercase">ACTIVE</p>
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[#222] to-[#111] border border-white/10 flex items-center justify-center shadow-lg">
+                <span class="text-sm">👤</span>
             </div>
         </div>
 
-        <h3 class="text-[10px] text-gray-600 uppercase font-bold mb-3 tracking-widest text-center">РЕКОРДЫ</h3>
-        <div id="u-records" class="space-y-2"></div>
+        <div class="grid grid-cols-2 gap-3 mb-4 fade-in delay-1">
+            <div class="glass-card p-5 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-16 h-16 bg-white/5 rounded-full blur-2xl -mr-8 -mt-8"></div>
+                <p class="text-[9px] text-gray-400 uppercase font-bold tracking-wider mb-2">Workouts</p>
+                <p id="u-count" class="text-3xl font-black stat-value">0</p>
+                <p class="text-[9px] text-green-500 mt-2 font-bold flex items-center">● Active</p>
+            </div>
+            <div class="glass-card p-5 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-16 h-16 bg-[#D4AF37]/10 rounded-full blur-2xl -mr-8 -mt-8"></div>
+                <p class="text-[9px] text-gray-400 uppercase font-bold tracking-wider mb-2">Volume (L)</p>
+                <p id="u-water" class="text-3xl font-black text-[#D4AF37]">0</p>
+                <p class="text-[9px] text-[#D4AF37]/70 mt-2 font-bold">Hydration</p>
+            </div>
+        </div>
+
+        <div class="glass-card p-5 mb-8 flex justify-between items-center fade-in delay-2">
+            <div>
+                <p class="text-[9px] text-gray-400 uppercase font-bold tracking-wider mb-1">Avg. Duration</p>
+                <p id="u-time" class="text-xl font-bold text-white">0 min</p>
+            </div>
+            <div class="h-8 w-[1px] bg-white/10"></div>
+            <div class="text-right">
+                <p class="text-[9px] text-gray-400 uppercase font-bold tracking-wider mb-1">Efficiency</p>
+                <p class="text-[#D4AF37] font-black text-lg">HIGH</p>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-between mb-4 fade-in delay-3">
+            <h3 class="text-xs font-bold text-white uppercase tracking-widest">Personal Best</h3>
+            <span class="text-[9px] bg-white/10 px-2 py-1 rounded text-gray-300">Last 30 days</span>
+        </div>
+        
+        <div id="u-records" class="space-y-3 pb-12 fade-in delay-3">
+            </div>
     </div>
 
     <script>
+        // 👇👇👇 ВСТАВЬ СВОЮ ССЫЛКУ СЮДА 👇👇👇
         const GAS_URL = "https://script.google.com/macros/s/AKfycby95bCwV-VYPgbqumu67NTHSfRG7fFYk4M1r7mK_q6qx8GrLdpoFEPkM4vqfhmqqwrW/exec"; 
         
         const tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
+        // Включаем темную тему натива
+        tg.setHeaderColor('#050505'); 
+        tg.setBackgroundColor('#050505');
 
         window.onload = function() {
             const user = tg.initDataUnsafe?.user;
             
+            // Если тестируешь в браузере без Телеграма, раскомментируй строку ниже:
+            // const user = { id: 541003020 }; 
+
             if (!user || !user.id) {
-                showError("Нет доступа к Telegram ID. Запустите через бота.");
+                setTimeout(() => showError("No Telegram Data"), 1000);
                 return;
             }
 
-            document.getElementById('status').innerText = "Проверка ID: " + user.id;
+            document.getElementById('status').innerText = `ID: ${user.id} • CONNECTING`;
 
-            // Отправляем запрос на Google Script (как API)
             fetch(GAS_URL, {
                 method: 'POST',
                 body: JSON.stringify({ userId: user.id })
             })
-            .then(response => response.json())
+            .then(res => res.json())
             .then(data => {
-                if (data.success) {
-                    render(data);
-                } else {
-                    showError(data.error);
-                }
+                // Имитация задержки для "красивой" загрузки
+                setTimeout(() => {
+                    if (data.success) render(data);
+                    else showError(data.error);
+                }, 1500); 
             })
-            .catch(err => {
-                showError("Ошибка связи с таблицей: " + err);
-            });
+            .catch(err => showError("Connection Failed"));
         };
 
         function render(data) {
-            document.getElementById('u-name').innerText = data.name;
+            document.getElementById('u-name').innerText = data.name.split(' ')[0]; // Только имя
             
-            if (data.empty) {
-                document.getElementById('u-records').innerHTML = '<div class="text-center text-gray-600 text-xs py-10">Пусто</div>';
-            } else {
+            if (!data.empty) {
                 document.getElementById('u-count').innerText = data.totalWorkouts;
                 document.getElementById('u-water').innerText = (data.totalWater / 1000).toFixed(1);
-                document.getElementById('u-time').innerText = data.avgTime + " МИН";
+                document.getElementById('u-time').innerText = data.avgTime + "m";
 
-                document.getElementById('u-records').innerHTML = data.records.map(r => `
-                    <div class="card p-4 flex justify-between items-center border-b border-white/5">
-                        <div>
-                            <p class="text-[8px] text-[#00ff88] uppercase font-bold mb-1">${r.reps} ПОВТ</p>
-                            <p class="text-xs font-black uppercase italic text-gray-200">${r.name}</p>
+                const recordsHtml = data.records.map(r => `
+                    <div class="glass-card p-4 flex justify-between items-center active:scale-[0.98] transition-transform">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[10px] font-bold text-[#D4AF37] border border-[#D4AF37]/20">
+                                ${r.reps}
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-white leading-tight">${r.name}</p>
+                                <p class="text-[9px] text-gray-500 uppercase mt-0.5">Max Weight</p>
+                            </div>
                         </div>
-                        <p class="text-xl font-black italic text-white">${r.weight} <span class="text-[9px] text-[#00ff88]">КГ</span></p>
+                        <p class="text-xl font-black italic text-white">${r.weight}<span class="text-[10px] text-gray-500 not-italic ml-1">KG</span></p>
                     </div>
                 `).join('');
+                document.getElementById('u-records').innerHTML = recordsHtml;
+            } else {
+                document.getElementById('u-records').innerHTML = '<div class="text-center text-gray-600 text-xs py-10 opacity-50">No records found yet.</div>';
             }
-            document.getElementById('loading').classList.add('hidden');
-            document.getElementById('content').classList.remove('hidden');
+
+            document.getElementById('loading').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').classList.remove('hidden');
+            }, 500);
         }
 
         function showError(msg) {
-            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('loading').style.display = 'none';
             document.getElementById('error').classList.remove('hidden');
             document.getElementById('error-msg').innerText = msg;
         }
