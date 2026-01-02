@@ -13,11 +13,8 @@
         .glass-nav { background: rgba(18,18,18,0.95); backdrop-filter: blur(12px); border-top: 1px solid rgba(255,255,255,0.08); }
         .input-field { background: #1A1A1A; color: white; border: 1px solid #333; outline: none; transition: 0.2s; }
         .input-field:focus { border-color: var(--accent); }
-        
-        /* ИСПРАВЛЕННОЕ ПЕРЕКЛЮЧЕНИЕ РЕДАКТОРА */
         .edit-tool { display: none !important; }
         body.edit-mode .edit-tool { display: flex !important; }
-        
         .modal-overlay { background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; }
         .loader { width: 20px; height: 20px; border: 2px solid #333; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -34,13 +31,16 @@
 
     <div id="access-denied" class="hidden fixed inset-0 flex flex-col items-center justify-center bg-black z-[55] px-6 text-center">
         <div class="relative mb-6">
-            <img id="ad-photo" src="" class="w-24 h-24 rounded-full object-cover border-2 border-zinc-800 grayscale">
-            <div class="absolute -bottom-2 -right-2 bg-[#121212] p-2 rounded-full border border-zinc-800">
+            <img id="ad-photo" src="" class="w-24 h-24 rounded-full object-cover border-2 border-zinc-800 grayscale hidden">
+            <div id="ad-lock" class="hidden absolute -bottom-2 -right-2 bg-[#121212] p-2 rounded-full border border-zinc-800">
                 <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
             </div>
+            <div id="ad-anon" class="hidden w-24 h-24 rounded-full bg-zinc-800 flex items-center justify-center border-2 border-zinc-700">
+                <svg class="w-10 h-10 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            </div>
         </div>
-        <h2 id="ad-name" class="text-xl font-bold mb-2">...</h2>
-        <p class="text-zinc-500 text-sm mb-6">Доступ к приложению ограничен.<br>Свяжитесь с администратором.</p>
+        <h2 id="ad-name" class="text-xl font-bold mb-2">Доступ ограничен</h2>
+        <p class="text-zinc-500 text-sm mb-6">Нет прав доступа к приложению.<br>Свяжитесь с администратором.</p>
         <div class="px-4 py-2 bg-red-500/10 text-red-500 rounded-lg text-xs font-bold uppercase tracking-widest border border-red-500/20">Access Denied</div>
     </div>
 
@@ -96,7 +96,6 @@
     </div>
 
     <div id="app-container" class="hidden opacity-0 transition-opacity duration-500">
-        
         <header class="px-6 pt-6 pb-2 flex justify-between items-center">
             <div class="flex items-center gap-3">
                 <div class="relative">
@@ -115,7 +114,6 @@
 
         <section id="tab-stats" class="px-5 pt-4 fade-in">
             <div id="macros-container" class="mb-4"></div>
-
             <div class="flex justify-between items-center mb-3 px-1">
                 <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Дашборд</p>
                 <div class="relative">
@@ -124,7 +122,6 @@
                     </select>
                 </div>
             </div>
-
             <div class="grid grid-cols-2 gap-3 mb-3">
                 <div class="bento-card p-4">
                     <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Тренировки</span>
@@ -135,7 +132,6 @@
                     <p id="u-water" class="text-3xl font-black italic tracking-tighter text-blue-400 mt-1">0</p>
                 </div>
             </div>
-
             <div class="bento-card p-4 mb-6 flex justify-between items-center">
                 <div>
                     <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block mb-1">Прогресс</span>
@@ -146,13 +142,11 @@
                     <span id="u-time" class="text-lg font-bold text-white">0 мин</span>
                 </div>
             </div>
-
             <div class="flex items-center justify-between mb-3 px-1">
                 <h2 class="text-xs font-bold text-white uppercase tracking-widest">Рекорды</h2>
                 <button onclick="openModal('modal-record')" class="edit-tool bg-zinc-800 text-[#CCFF00] px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase border border-zinc-700">+ Добавить</button>
             </div>
             <div id="u-records" class="space-y-3 mb-8"></div>
-
             <div class="flex items-center justify-between mb-3 px-1">
                 <h2 class="text-xs font-bold text-white uppercase tracking-widest">История</h2>
                 <button onclick="openModal('modal-workout')" class="edit-tool bg-zinc-800 text-[#CCFF00] px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase border border-zinc-700">+ Вручную</button>
@@ -226,18 +220,26 @@
 
         window.onload = () => {
             const userId = tg.initDataUnsafe?.user?.id;
-            if (userId) loadData(userId);
-            // else loadData(123456789); // Тест для браузера
+            
+            if (!userId) {
+                showAccessDenied({ name: 'Доступ ограничен', photo: '' });
+                return; 
+            }
+            
+            loadData(userId);
         };
 
         function loadData(userId) {
-            // ИСПОЛЬЗУЕМ ОБЫЧНЫЙ ID
             fetch(`${GAS_URL}?id=${userId}`)
                 .then(res => res.json())
                 .then(data => {
-                    // ЕСЛИ ДОСТУП ЗАКРЫТ - ПОКАЗЫВАЕМ ЭКРАН "НЕТ ДОСТУПА"
                     if (data.error === "Access denied") {
                         showAccessDenied(data);
+                        return;
+                    }
+
+                    if (data.error === "User not found") {
+                        showAccessDenied({ name: 'Пользователь не найден', photo: '' });
                         return;
                     }
 
@@ -253,14 +255,19 @@
 
         function showAccessDenied(data) {
             document.getElementById('loading').style.display = 'none';
-            // Показываем экран блокировки
             document.getElementById('access-denied').classList.remove('hidden');
             
-            // Заполняем фото и имя (если сервер их вернул)
             if(data.photo) {
                 document.getElementById('ad-photo').src = data.photo;
-                document.getElementById('ad-photo').classList.remove('grayscale');
+                document.getElementById('ad-photo').classList.remove('hidden');
+                document.getElementById('ad-lock').classList.remove('hidden');
+                document.getElementById('ad-anon').classList.add('hidden');
+            } else {
+                document.getElementById('ad-photo').classList.add('hidden');
+                document.getElementById('ad-lock').classList.add('hidden');
+                document.getElementById('ad-anon').classList.remove('hidden');
             }
+            
             if(data.name) document.getElementById('ad-name').innerText = data.name;
         }
 
@@ -301,21 +308,15 @@
             applyEditModeState();
         }
 
-        // --- ИСПРАВЛЕННОЕ ПЕРЕКЛЮЧЕНИЕ РЕДАКТОРА ---
         function toggleEditMode() {
             isEditMode = !isEditMode;
-            // Переключаем класс у BODY, чтобы CSS сам показал/скрыл кнопки
             document.body.classList.toggle('edit-mode');
-            
             const btn = document.getElementById('btn-edit');
             btn.style.color = isEditMode ? '#CCFF00' : '#A1A1AA';
-            
             if(globalData && globalData.macros) renderMacrosWidget(globalData.macros);
         }
 
         function applyEditModeState() {
-             // Эта функция больше не нужна для переключения, т.к. CSS делает это сам.
-             // Оставляем только для перерисовки макросов, если нужно.
              if(globalData && globalData.macros) renderMacrosWidget(globalData.macros);
         }
 
@@ -421,7 +422,6 @@
             renderHistory(filteredHistory);
         }
 
-        // --- ФУНКЦИИ ОТПРАВКИ (ИСПОЛЬЗУЮТ ОБЫЧНЫЙ ID) ---
         function deleteItem(rowIndex, btn, actionType) {
             if(!confirm("Удалить запись?")) return;
             const userId = tg.initDataUnsafe?.user?.id;
@@ -505,7 +505,6 @@
                 });
         }
 
-        // --- КАЛЬКУЛЯТОР И ПРОЧЕЕ ---
         function calculateMacros() {
             const w = document.getElementById('c-weight').value;
             const h = document.getElementById('c-height').value;
