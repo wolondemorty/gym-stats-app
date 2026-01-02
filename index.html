@@ -3,105 +3,448 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>GymOS Fitness</title>
+    
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
     <style>
-        body { background: #000; color: #fff; font-family: 'Inter', sans-serif; }
-        .bg-card { background: #0A0A0A; border: 1px solid #141414; border-radius: 24px; }
-        .loader { border: 2px solid #111; border-top: 2px solid #fff; border-radius: 50%; width: 24px; height: 24px; animation: spin 0.8s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Base Settings */
+        :root {
+            --bg-color: #050505;
+            --card-bg: #121212;
+            --accent: #CCFF00; /* Neon Lime */
+            --text-main: #FFFFFF;
+            --text-muted: #71717A;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -webkit-tap-highlight-color: transparent;
+            padding-bottom: 90px; /* Space for Bottom Nav */
+        }
+
+        /* Components */
+        .glass-nav {
+            background: rgba(18, 18, 18, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .bento-card {
+            background-color: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+        }
+
+        .input-field {
+            background: #1A1A1A;
+            color: white;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+        .input-field:focus {
+            border-color: var(--accent);
+            outline: none;
+        }
+
+        .action-btn {
+            background: var(--accent);
+            color: black;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            transition: transform 0.1s;
+        }
+        .action-btn:active {
+            transform: scale(0.96);
+        }
+
+        /* Animations */
+        .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .loader {
+            width: 24px; height: 24px;
+            border: 3px solid #333;
+            border-bottom-color: var(--accent);
+            border-radius: 50%;
+            display: inline-block;
+            box-sizing: border-box;
+            animation: rotation 1s linear infinite;
+        }
+        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Hide scrollbar */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Select Reset */
+        select { -webkit-appearance: none; appearance: none; }
     </style>
 </head>
-<body class="px-6 pb-12">
-    <div id="loading" class="fixed inset-0 flex items-center justify-center bg-black z-50">
-        <div class="loader"></div>
+<body class="select-none">
+
+    <div id="loading" class="fixed inset-0 flex flex-col items-center justify-center bg-black z-50">
+        <span class="loader mb-4"></span>
+        <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.2em]">Загрузка данных</p>
     </div>
 
-    <div id="content" class="hidden opacity-0 transition-opacity duration-500">
-        <div class="flex items-center space-x-4 mt-10 mb-10">
-            <img id="u-photo" src="" class="w-16 h-16 rounded-full border border-white/10 hidden">
-            <div id="u-initials" class="w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center text-xl font-bold">..</div>
-            <div>
-                <h1 id="u-name" class="text-xl font-bold">...</h1>
-                <p id="u-sheet" class="text-[10px] text-zinc-500 uppercase font-bold tracking-widest mt-1">...</p>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4 mb-4">
-            <div class="bg-card p-6">
-                <p class="text-[10px] text-zinc-500 font-bold uppercase mb-2">Тренировки</p>
-                <p id="u-count" class="text-3xl font-black italic">0</p>
-            </div>
-            <div class="bg-card p-6">
-                <p class="text-[10px] text-zinc-500 font-bold uppercase mb-2">Вода (Л)</p>
-                <p id="u-water" class="text-3xl font-black italic text-blue-500">0</p>
-            </div>
-        </div>
-
-        <div class="bg-card p-6 mb-12 flex justify-between items-center">
-            <div>
-                <p class="text-[10px] text-zinc-500 font-bold uppercase mb-1">Среднее время</p>
-                <p id="u-time" class="text-xl font-bold italic">0 мин</p>
-            </div>
-            <div class="text-right">
-                <p class="text-[10px] text-zinc-500 font-bold uppercase mb-1">Прогресс</p>
-                <p class="text-green-500 text-xl font-bold italic">+12%</p>
-            </div>
-        </div>
-
-        <h2 class="text-[11px] font-black text-zinc-500 uppercase tracking-widest mb-6">Личные рекорды</h2>
-        <div id="u-records" class="space-y-3"></div>
+    <div id="error-screen" class="hidden fixed inset-0 flex flex-col items-center justify-center bg-black z-40 px-6 text-center">
+        <div class="text-red-500 text-4xl mb-4">⚠️</div>
+        <p id="error-text" class="text-sm text-zinc-400 mb-6"></p>
+        <button onclick="location.reload()" class="px-6 py-2 rounded-full border border-zinc-700 text-xs font-bold uppercase">Повторить</button>
     </div>
+
+    <div id="app-container" class="hidden opacity-0 transition-opacity duration-500">
+        
+        <header class="px-6 pt-6 pb-2 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="relative">
+                    <img id="u-photo" src="" class="w-12 h-12 rounded-full object-cover border border-white/10 hidden">
+                    <div id="u-initials" class="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center text-sm font-bold text-zinc-400">ID</div>
+                </div>
+                <div>
+                    <h1 id="u-name" class="text-lg font-bold leading-tight">Гость</h1>
+                    <span id="u-sheet" class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider bg-zinc-900 px-2 py-0.5 rounded-md">Загрузка...</span>
+                </div>
+            </div>
+        </header>
+
+        <section id="tab-stats" class="px-5 pt-4 pb-20 fade-in">
+            <div class="grid grid-cols-2 gap-3 mb-3">
+                <div class="bento-card p-5 flex flex-col justify-between h-32 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-16 h-16 bg-white/5 rounded-full -mr-4 -mt-4 blur-xl"></div>
+                    <span class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Тренировки</span>
+                    <span id="u-count" class="text-4xl font-black italic tracking-tighter">0</span>
+                </div>
+                <div class="bento-card p-5 flex flex-col justify-between h-32">
+                    <span class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Вода (Л)</span>
+                    <span id="u-water" class="text-4xl font-black italic tracking-tighter text-blue-400">0</span>
+                </div>
+            </div>
+
+            <div class="bento-card p-5 mb-8 flex justify-between items-center">
+                <div>
+                    <span class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block mb-1">Среднее время</span>
+                    <span id="u-time" class="text-xl font-bold">0 мин</span>
+                </div>
+                <div class="text-right">
+                    <span class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block mb-1">Прогресс</span>
+                    <span id="u-progress" class="text-xl font-bold text-[#CCFF00]">+0%</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4 mb-5">
+                <h2 class="text-sm font-bold text-white uppercase tracking-widest">Личные рекорды</h2>
+                <div class="h-[1px] bg-zinc-800 flex-grow"></div>
+            </div>
+
+            <div id="u-records" class="space-y-3">
+                </div>
+        </section>
+
+        <section id="tab-calc" class="px-5 pt-4 pb-20 hidden">
+            <h2 class="text-2xl font-black italic tracking-tighter mb-6">КАЛЬКУЛЯТОР <span class="text-[#CCFF00]">КБЖУ</span></h2>
+            
+            <form id="calc-form" class="space-y-5">
+                <div class="grid grid-cols-2 gap-3 p-1 bg-[#1A1A1A] rounded-xl">
+                    <label class="cursor-pointer">
+                        <input type="radio" name="gender" value="male" class="peer sr-only" checked>
+                        <div class="py-3 text-center text-xs font-bold uppercase rounded-lg text-zinc-500 peer-checked:bg-[#2A2A2A] peer-checked:text-white transition-all">Мужчина</div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="gender" value="female" class="peer sr-only">
+                        <div class="py-3 text-center text-xs font-bold uppercase rounded-lg text-zinc-500 peer-checked:bg-[#2A2A2A] peer-checked:text-white transition-all">Женщина</div>
+                    </label>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[10px] text-zinc-500 font-bold uppercase ml-1">Вес (кг)</label>
+                        <input type="number" id="weight" class="input-field w-full p-4 rounded-xl font-bold text-lg mt-1" placeholder="80">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-zinc-500 font-bold uppercase ml-1">Рост (см)</label>
+                        <input type="number" id="height" class="input-field w-full p-4 rounded-xl font-bold text-lg mt-1" placeholder="180">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] text-zinc-500 font-bold uppercase ml-1">Возраст</label>
+                    <input type="number" id="age" class="input-field w-full p-4 rounded-xl font-bold text-lg mt-1" placeholder="25">
+                </div>
+
+                <div>
+                    <label class="text-[10px] text-zinc-500 font-bold uppercase ml-1">Активность</label>
+                    <div class="relative mt-1">
+                        <select id="activity" class="input-field w-full p-4 rounded-xl font-bold text-sm appearance-none">
+                            <option value="1.2">Сидячий образ жизни</option>
+                            <option value="1.375">Лёгкая (1-3 тренировки)</option>
+                            <option value="1.55">Средняя (3-5 тренировок)</option>
+                            <option value="1.725">Высокая (6-7 тренировок)</option>
+                            <option value="1.9">Экстремальная</option>
+                        </select>
+                        <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">▼</div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-[10px] text-zinc-500 font-bold uppercase ml-1">Цель</label>
+                    <div class="grid grid-cols-3 gap-2 mt-1">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="goal" value="cut" class="peer sr-only">
+                            <div class="py-3 border border-zinc-800 rounded-xl text-center text-[10px] font-bold uppercase text-zinc-500 peer-checked:border-[#CCFF00] peer-checked:text-[#CCFF00] transition-all">Сушка</div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="goal" value="maintain" class="peer sr-only" checked>
+                            <div class="py-3 border border-zinc-800 rounded-xl text-center text-[10px] font-bold uppercase text-zinc-500 peer-checked:border-white peer-checked:text-white transition-all">Норма</div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="goal" value="bulk" class="peer sr-only">
+                            <div class="py-3 border border-zinc-800 rounded-xl text-center text-[10px] font-bold uppercase text-zinc-500 peer-checked:border-red-500 peer-checked:text-red-500 transition-all">Масса</div>
+                        </label>
+                    </div>
+                </div>
+
+                <button type="button" onclick="calculateMacros()" class="action-btn w-full py-4 rounded-xl text-sm uppercase shadow-[0_0_20px_rgba(204,255,0,0.2)]">Рассчитать</button>
+            </form>
+
+            <div id="calc-result" class="hidden mt-8 bento-card p-6 border-t-4 border-[#CCFF00]">
+                <div class="text-center mb-6">
+                    <p class="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">Твоя норма</p>
+                    <p id="res-cals" class="text-4xl font-black text-white mt-1">0 <span class="text-lg text-zinc-600">ккал</span></p>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="bg-zinc-900/50 p-2 rounded-lg">
+                        <p class="text-[9px] text-zinc-500 font-bold uppercase">Белки</p>
+                        <p id="res-p" class="text-lg font-bold">0г</p>
+                    </div>
+                    <div class="bg-zinc-900/50 p-2 rounded-lg">
+                        <p class="text-[9px] text-zinc-500 font-bold uppercase">Жиры</p>
+                        <p id="res-f" class="text-lg font-bold">0г</p>
+                    </div>
+                    <div class="bg-zinc-900/50 p-2 rounded-lg">
+                        <p class="text-[9px] text-zinc-500 font-bold uppercase">Угли</p>
+                        <p id="res-c" class="text-lg font-bold">0г</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <nav class="fixed bottom-0 left-0 right-0 glass-nav pb-safe pt-2 px-6 h-[80px] flex justify-around items-start z-50">
+        <button onclick="switchTab('stats')" id="btn-stats" class="flex flex-col items-center group w-16">
+            <div class="w-12 h-0.5 bg-[#CCFF00] mb-3 rounded-full shadow-[0_0_10px_#CCFF00] transition-all duration-300"></div>
+            <svg class="w-6 h-6 text-white transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            <span class="text-[9px] font-bold uppercase mt-1 text-white transition-colors duration-300">Статы</span>
+        </button>
+        
+        <button onclick="switchTab('calc')" id="btn-calc" class="flex flex-col items-center group w-16">
+            <div class="w-12 h-0.5 bg-transparent mb-3 rounded-full transition-all duration-300"></div>
+            <svg class="w-6 h-6 text-zinc-600 transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+            <span class="text-[9px] font-bold uppercase mt-1 text-zinc-600 transition-colors duration-300">КБЖУ</span>
+        </button>
+    </nav>
 
     <script>
+        // --- CONFIGURATION ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycby95bCwV-VYPgbqumu67NTHSfRG7fFYk4M1r7mK_q6qx8GrLdpoFEPkM4vqfhmqqwrW/exec"; 
+
+        // --- INIT TELEGRAM ---
         const tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
+        tg.enableClosingConfirmation();
+        tg.headerColor = '#050505';
+        tg.backgroundColor = '#050505';
 
+        // --- APP LOGIC ---
         window.onload = function() {
             const userId = tg.initDataUnsafe?.user?.id;
-            if (!userId) return;
+            
+            // Если открыли не в ТГ, показываем заглушку (для тестов можно убрать)
+            if (!userId) { 
+                // document.getElementById('loading').innerHTML = "Open in Telegram"; 
+                // return;
+                // ДЛЯ ТЕСТА В БРАУЗЕРЕ РАСКОММЕНТИРУЙ СТРОКУ НИЖЕ И ЗАМЕНИ НА СВОЙ ID:
+                // loadData(123456789); 
+            }
 
+            if (userId) loadData(userId);
+        };
+
+        function loadData(userId) {
             fetch(`${GAS_URL}?id=${userId}`)
                 .then(res => res.json())
                 .then(data => {
-                    if (data.success) render(data);
-                    else alert(data.error);
+                    if (data.success) {
+                        renderStats(data);
+                        showApp();
+                    } else {
+                        showError(data.error);
+                    }
                 })
-                .catch(() => {
-                    document.getElementById('loading').innerHTML = "<p class='text-red-500 text-xs'>Ошибка соединения</p>";
-                });
-        };
+                .catch(err => showError("Ошибка соединения с сервером"));
+        }
 
-        function render(data) {
+        function renderStats(data) {
+            // Header
             document.getElementById('u-name').innerText = data.name;
-            document.getElementById('u-sheet').innerText = "Лист: " + data.sheet;
-            document.getElementById('u-count').innerText = data.totalWorkouts;
-            document.getElementById('u-water').innerText = data.totalWater;
-            document.getElementById('u-time').innerText = data.avgTime + " мин";
-
+            document.getElementById('u-sheet').innerText = data.sheet;
+            
             if (data.photo) {
                 const img = document.getElementById('u-photo');
                 img.src = data.photo; img.classList.remove('hidden');
                 document.getElementById('u-initials').classList.add('hidden');
+            } else {
+                document.getElementById('u-initials').innerText = data.name.substring(0, 2).toUpperCase();
             }
 
-            document.getElementById('u-records').innerHTML = data.records.map(r => `
-                <div class="bg-card p-5 flex justify-between items-center">
-                    <div>
-                        <p class="text-[9px] text-zinc-500 font-bold uppercase mb-1">${r.reps} повт.</p>
-                        <h3 class="text-sm font-bold uppercase italic">${r.name}</h3>
-                    </div>
-                    <p class="text-2xl font-black italic">${r.weight}<span class="text-[10px] text-zinc-600 ml-1">КГ</span></p>
-                </div>
-            `).join('');
+            // Metrics
+            document.getElementById('u-count').innerText = data.totalWorkouts;
+            document.getElementById('u-water').innerText = data.totalWater;
+            document.getElementById('u-time').innerText = data.avgTime + " мин";
+            
+            // Progress Color Logic
+            const progEl = document.getElementById('u-progress');
+            progEl.innerText = data.progress;
+            if (data.progress.includes('+')) progEl.style.color = '#CCFF00';
+            else if (data.progress.includes('-')) progEl.style.color = '#FF3B30';
+            else progEl.style.color = 'white';
 
+            // Records
+            const recordsContainer = document.getElementById('u-records');
+            if (data.empty || !data.records || data.records.length === 0) {
+                recordsContainer.innerHTML = '<p class="text-zinc-700 text-xs py-10 text-center uppercase tracking-widest italic">Нет данных</p>';
+            } else {
+                recordsContainer.innerHTML = data.records.map(r => `
+                    <div class="bento-card p-4 flex justify-between items-center active:scale-[0.99] transition-transform">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-[10px] font-black text-[#CCFF00]">
+                                ${r.reps}x
+                            </div>
+                            <div class="overflow-hidden">
+                                <h3 class="text-sm font-bold text-white uppercase italic truncate w-32">${r.name}</h3>
+                                <p class="text-[9px] text-zinc-500 font-bold uppercase mt-0.5">Рекорд</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xl font-black italic tracking-tighter text-white">${r.weight}<span class="text-[9px] text-zinc-600 ml-1 font-bold not-italic">KG</span></p>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // --- CALCULATOR LOGIC ---
+        function calculateMacros() {
+            const gender = document.querySelector('input[name="gender"]:checked').value;
+            const weight = parseFloat(document.getElementById('weight').value);
+            const height = parseFloat(document.getElementById('height').value);
+            const age = parseFloat(document.getElementById('age').value);
+            const activity = parseFloat(document.getElementById('activity').value);
+            const goal = document.querySelector('input[name="goal"]:checked').value;
+
+            if (!weight || !height || !age) {
+                tg.HapticFeedback.notificationOccurred('error');
+                alert("Заполни все поля, атлет!");
+                return;
+            }
+
+            // Mifflin-St Jeor Equation
+            let bmr = (10 * weight) + (6.25 * height) - (5 * age);
+            bmr += (gender === 'male') ? 5 : -161;
+
+            let tdee = bmr * activity;
+
+            // Goal Adjustment
+            if (goal === 'cut') tdee *= 0.85; // -15%
+            else if (goal === 'bulk') tdee *= 1.15; // +15%
+
+            const cals = Math.round(tdee);
+
+            // Macros (Standard Bodybuilding Split: 30% P / 25% F / 45% C or balanced)
+            // Let's use a balanced approach usually suitable for general fitness
+            const protein = Math.round((cals * 0.3) / 4);
+            const fat = Math.round((cals * 0.25) / 9);
+            const carbs = Math.round((cals * 0.45) / 4);
+
+            // Render
+            document.getElementById('res-cals').innerHTML = `${cals} <span class="text-lg text-zinc-600">ккал</span>`;
+            document.getElementById('res-p').innerText = `${protein}г`;
+            document.getElementById('res-f').innerText = `${fat}г`;
+            document.getElementById('res-c').innerText = `${carbs}г`;
+
+            document.getElementById('calc-result').classList.remove('hidden');
+            document.getElementById('calc-result').scrollIntoView({ behavior: 'smooth' });
+            
+            tg.HapticFeedback.notificationOccurred('success');
+        }
+
+        // --- TAB SWITCHING ---
+        function switchTab(tab) {
+            tg.HapticFeedback.impactOccurred('light');
+            
+            const statsSection = document.getElementById('tab-stats');
+            const calcSection = document.getElementById('tab-calc');
+            const btnStats = document.getElementById('btn-stats');
+            const btnCalc = document.getElementById('btn-calc');
+
+            // Colors
+            const activeColor = 'text-white';
+            const inactiveColor = 'text-zinc-600';
+            const activeBar = 'bg-[#CCFF00]';
+            const inactiveBar = 'bg-transparent';
+            const activeShadow = 'shadow-[0_0_10px_#CCFF00]';
+
+            if (tab === 'stats') {
+                statsSection.classList.remove('hidden');
+                statsSection.classList.add('fade-in');
+                calcSection.classList.add('hidden');
+                
+                // Style Nav Stats
+                btnStats.querySelector('div').className = `w-12 h-0.5 mb-3 rounded-full transition-all duration-300 ${activeBar} ${activeShadow}`;
+                btnStats.querySelector('svg').className = `w-6 h-6 transition-colors duration-300 ${activeColor}`;
+                btnStats.querySelector('span').className = `text-[9px] font-bold uppercase mt-1 transition-colors duration-300 ${activeColor}`;
+
+                // Style Nav Calc
+                btnCalc.querySelector('div').className = `w-12 h-0.5 mb-3 rounded-full transition-all duration-300 ${inactiveBar}`;
+                btnCalc.querySelector('svg').className = `w-6 h-6 transition-colors duration-300 ${inactiveColor}`;
+                btnCalc.querySelector('span').className = `text-[9px] font-bold uppercase mt-1 transition-colors duration-300 ${inactiveColor}`;
+                
+            } else {
+                statsSection.classList.add('hidden');
+                calcSection.classList.remove('hidden');
+                calcSection.classList.add('fade-in');
+
+                // Style Nav Calc
+                btnCalc.querySelector('div').className = `w-12 h-0.5 mb-3 rounded-full transition-all duration-300 ${activeBar} ${activeShadow}`;
+                btnCalc.querySelector('svg').className = `w-6 h-6 transition-colors duration-300 ${activeColor}`;
+                btnCalc.querySelector('span').className = `text-[9px] font-bold uppercase mt-1 transition-colors duration-300 ${activeColor}`;
+
+                // Style Nav Stats
+                btnStats.querySelector('div').className = `w-12 h-0.5 mb-3 rounded-full transition-all duration-300 ${inactiveBar}`;
+                btnStats.querySelector('svg').className = `w-6 h-6 transition-colors duration-300 ${inactiveColor}`;
+                btnStats.querySelector('span').className = `text-[9px] font-bold uppercase mt-1 transition-colors duration-300 ${inactiveColor}`;
+            }
+        }
+
+        // --- UTILS ---
+        function showApp() {
             document.getElementById('loading').style.display = 'none';
-            const content = document.getElementById('content');
-            content.classList.remove('hidden');
-            setTimeout(() => content.classList.add('opacity-100'), 50);
+            document.getElementById('app-container').classList.remove('hidden');
+            setTimeout(() => document.getElementById('app-container').classList.remove('opacity-0'), 50);
+        }
+
+        function showError(msg) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error-screen').classList.remove('hidden');
+            document.getElementById('error-text').innerText = msg;
         }
     </script>
 </body>
