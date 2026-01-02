@@ -238,6 +238,11 @@
                         return;
                     }
 
+                    if (data.error === "User not found") {
+                        showAccessDenied({ name: 'Пользователь не найден', photo: '' });
+                        return;
+                    }
+
                     if (data.success) {
                         globalData = data;
                         renderApp(data);
@@ -263,7 +268,7 @@
                 lockEl.classList.add('hidden');
                 anonEl.classList.remove('hidden');
                 nameEl.innerText = "Вход только через Telegram";
-                textEl.innerText = "Пожалуйста, откройте приложение\nчерез бота.";
+                textEl.innerText = "Пожалуйста, откройте приложение\nчерез нашего бота.";
             } else {
                 anonEl.classList.add('hidden');
                 photoEl.classList.remove('hidden');
@@ -294,13 +299,28 @@
             renderMacrosWidget(data.macros);
             
             const select = document.getElementById('prog-filter');
-            select.innerHTML = '<option value="all">Все программы</option>';
-            if (data.programs) {
+            select.innerHTML = '';
+            
+            const hasMultiplePrograms = data.programs && data.programs.length > 1;
+            const hasAnyPrograms = data.programs && data.programs.length > 0;
+
+            if (hasMultiplePrograms) {
+                select.innerHTML = '<option value="all">Все программы</option>';
+            } else if (!hasAnyPrograms) {
+                 select.innerHTML = '<option value="all">Нет программ</option>';
+                 select.disabled = true;
+            }
+
+            if (hasAnyPrograms) {
                 data.programs.forEach(p => {
                     const opt = document.createElement('option');
-                    opt.value = p; opt.innerText = p.length > 20 ? p.substring(0,20)+'...' : p;
+                    opt.value = p;
+                    opt.innerText = p.length > 20 ? p.substring(0,20)+'...' : p;
                     select.appendChild(opt);
                 });
+                if (!hasMultiplePrograms) {
+                    select.value = data.programs[0];
+                }
             }
 
             filterData();
@@ -359,11 +379,11 @@
             
             container.innerHTML = list.map(r => `
                 <div class="group relative bento-card p-4 mb-3 border-l-4 border-[#CCFF00]">
-                    <button onclick="deleteItem(${r.rowIndex}, this, 'delete_record')" class="edit-tool absolute top-3 right-3 w-8 h-8 bg-red-500/10 text-red-500 rounded-lg items-center justify-center hover:bg-red-500 hover:text-white transition-all z-20">✕</button>
+                    <button onclick="deleteItem(${r.rowIndex}, this, 'delete_record')" class="edit-tool absolute top-2 right-2 w-8 h-8 bg-red-500/10 text-red-500 rounded-lg items-center justify-center hover:bg-red-500 hover:text-white transition-all z-20">✕</button>
                     
                     <div class="flex justify-between items-start relative z-10">
                         <div>
-                             <h3 class="text-base font-black uppercase italic text-white leading-tight tracking-wide pr-8">${r.name}</h3>
+                             <h3 class="text-base font-black uppercase italic text-white leading-tight tracking-wide pr-10">${r.name}</h3>
                              <p class="text-[10px] text-zinc-500 font-bold mt-1">${r.date}</p>
                         </div>
                         <div class="text-right">
