@@ -10,21 +10,18 @@
         :root { --bg: #050505; --card: #121212; --accent: #CCFF00; --danger: #FF3B30; }
         body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; padding-bottom: 90px; }
         
-        /* Карточки */
-        .bento-card { background: var(--card); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; position: relative; overflow: hidden; }
+        .bento-card { background: var(--card); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; position: relative; }
         .glass-nav { background: rgba(18,18,18,0.95); backdrop-filter: blur(12px); border-top: 1px solid rgba(255,255,255,0.08); }
-        
-        /* Поля ввода */
         .input-field { background: #1A1A1A; color: white; border: 1px solid #333; outline: none; transition: 0.2s; }
         .input-field:focus { border-color: var(--accent); }
         
-        /* Кнопки удаления (по умолчанию скрыты) */
-        .delete-btn { display: none; }
+        /* Edit Mode */
+        .edit-tool { display: none !important; }
+        body.edit-mode .edit-tool { display: flex !important; }
         
-        /* Модальные окна */
-        .modal-overlay { background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); }
+        /* Centered Modals */
+        .modal-overlay { background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; }
         
-        /* Анимации */
         .loader { width: 20px; height: 20px; border: 2px solid #333; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .fade-in { animation: fadeIn 0.3s ease-out; }
@@ -38,11 +35,23 @@
         <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Загрузка...</p>
     </div>
 
-    <div id="modal-record" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center modal-overlay p-4">
-        <div class="bg-[#121212] w-full max-w-sm rounded-3xl p-6 border border-zinc-800 mb-6 sm:mb-0 shadow-2xl shadow-black">
+    <div id="access-denied" class="hidden fixed inset-0 flex flex-col items-center justify-center bg-black z-[55] px-6 text-center">
+        <div class="relative mb-6">
+            <img id="ad-photo" src="" class="w-24 h-24 rounded-full object-cover border-2 border-zinc-800 grayscale">
+            <div class="absolute -bottom-2 -right-2 bg-[#121212] p-2 rounded-full border border-zinc-800">
+                <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            </div>
+        </div>
+        <h2 id="ad-name" class="text-xl font-bold mb-2">...</h2>
+        <p class="text-zinc-500 text-sm mb-6">Доступ к приложению ограничен.<br>Свяжитесь с администратором.</p>
+        <div class="px-4 py-2 bg-red-500/10 text-red-500 rounded-lg text-xs font-bold uppercase tracking-widest border border-red-500/20">Access Denied</div>
+    </div>
+
+    <div id="modal-record" class="hidden fixed inset-0 z-50 modal-overlay p-4">
+        <div class="bg-[#121212] w-full max-w-sm rounded-3xl p-6 border border-zinc-800 shadow-2xl shadow-black">
             <h3 class="text-xl font-black italic mb-6 text-white">Новый рекорд</h3>
             <div class="space-y-3">
-                <input id="rec-name" type="text" placeholder="Упражнение (напр. Жим)" class="input-field w-full p-4 rounded-2xl font-bold text-sm">
+                <input id="rec-name" type="text" placeholder="Упражнение" class="input-field w-full p-4 rounded-2xl font-bold text-sm">
                 <div class="grid grid-cols-2 gap-3">
                     <input id="rec-weight" type="number" placeholder="Вес (кг)" class="input-field w-full p-4 rounded-2xl font-bold text-sm">
                     <input id="rec-reps" type="number" placeholder="Повторы" class="input-field w-full p-4 rounded-2xl font-bold text-sm">
@@ -55,8 +64,8 @@
         </div>
     </div>
 
-    <div id="modal-workout" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center modal-overlay p-4">
-        <div class="bg-[#121212] w-full max-w-sm rounded-3xl p-6 border border-zinc-800 mb-6 sm:mb-0 shadow-2xl shadow-black">
+    <div id="modal-workout" class="hidden fixed inset-0 z-50 modal-overlay p-4">
+        <div class="bg-[#121212] w-full max-w-sm rounded-3xl p-6 border border-zinc-800 shadow-2xl shadow-black">
             <h3 class="text-xl font-black italic mb-6 text-white">Ручной ввод</h3>
             <div class="space-y-3">
                 <input id="work-prog" type="text" placeholder="Программа" class="input-field w-full p-4 rounded-2xl font-bold text-sm">
@@ -73,8 +82,8 @@
         </div>
     </div>
 
-    <div id="modal-custom-macros" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center modal-overlay p-4">
-        <div class="bg-[#121212] w-full max-w-sm rounded-3xl p-6 border border-zinc-800 mb-6 sm:mb-0 shadow-2xl shadow-black">
+    <div id="modal-custom-macros" class="hidden fixed inset-0 z-50 modal-overlay p-4">
+        <div class="bg-[#121212] w-full max-w-sm rounded-3xl p-6 border border-zinc-800 shadow-2xl shadow-black">
             <h3 class="text-xl font-black italic mb-6 text-white">Твои цели КБЖУ</h3>
             <input id="custom-cals" type="number" placeholder="Ккал (всего)" class="input-field w-full p-4 rounded-2xl mb-3 font-bold text-lg text-[#CCFF00]">
             <div class="grid grid-cols-3 gap-2">
@@ -144,20 +153,19 @@
 
             <div class="flex items-center justify-between mb-3 px-1">
                 <h2 class="text-xs font-bold text-white uppercase tracking-widest">Рекорды</h2>
-                <button onclick="openModal('modal-record')" class="edit-tool hidden bg-zinc-800 text-[#CCFF00] px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase border border-zinc-700">+ Добавить</button>
+                <button onclick="openModal('modal-record')" class="edit-tool bg-zinc-800 text-[#CCFF00] px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase border border-zinc-700">+ Добавить</button>
             </div>
             <div id="u-records" class="space-y-3 mb-8"></div>
 
             <div class="flex items-center justify-between mb-3 px-1">
                 <h2 class="text-xs font-bold text-white uppercase tracking-widest">История</h2>
-                <button onclick="openModal('modal-workout')" class="edit-tool hidden bg-zinc-800 text-[#CCFF00] px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase border border-zinc-700">+ Вручную</button>
+                <button onclick="openModal('modal-workout')" class="edit-tool bg-zinc-800 text-[#CCFF00] px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase border border-zinc-700">+ Вручную</button>
             </div>
             <div id="u-history" class="space-y-2 pb-4"></div>
         </section>
 
         <section id="tab-calc" class="px-5 pt-4 hidden fade-in">
             <h2 class="text-2xl font-black italic tracking-tighter mb-6">КАЛЬКУЛЯТОР <span class="text-[#CCFF00]">КБЖУ</span></h2>
-            
             <div class="space-y-5">
                 <div class="grid grid-cols-2 gap-3 p-1 bg-[#1A1A1A] rounded-xl">
                     <label class="cursor-pointer"><input type="radio" name="gender" value="male" class="peer sr-only" checked><div class="py-3 text-center text-xs font-bold uppercase rounded-lg text-zinc-500 peer-checked:bg-[#2A2A2A] peer-checked:text-white transition-all">Мужчина</div></label>
@@ -186,7 +194,7 @@
 
                 <button type="button" onclick="calculateMacros()" class="w-full bg-[#CCFF00] text-black py-4 rounded-2xl font-black uppercase text-sm shadow-[0_0_20px_rgba(204,255,0,0.2)] active:scale-95 transition-transform">Рассчитать</button>
             </div>
-
+            
             <div id="calc-result" class="hidden mt-8 bento-card p-6 border-t-4 border-[#CCFF00] mb-8">
                 <div class="text-center mb-4">
                     <h3 id="res-total" class="text-4xl font-black italic text-white">0</h3>
@@ -227,13 +235,19 @@
         window.onload = () => {
             const userId = tg.initDataUnsafe?.user?.id;
             if (userId) loadData(userId);
-            // else loadData(123456789); // Тест
+            // else loadData(123456789); // Test
         };
 
         function loadData(userId) {
             fetch(`${GAS_URL}?id=${userId}`)
                 .then(res => res.json())
                 .then(data => {
+                    // Проверка на отказ в доступе
+                    if (data.error === "Access denied") {
+                        showAccessDenied(data);
+                        return;
+                    }
+
                     if (data.success) {
                         globalData = data;
                         renderApp(data);
@@ -241,7 +255,14 @@
                         renderEmptyState(data.error);
                     }
                 })
-                .catch(e => renderEmptyState("Ошибка сети"));
+                .catch(e => renderEmptyState("Ошибка соединения"));
+        }
+
+        function showAccessDenied(data) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('access-denied').classList.remove('hidden');
+            if(data.photo) document.getElementById('ad-photo').src = data.photo;
+            if(data.name) document.getElementById('ad-name').innerText = data.name;
         }
 
         function renderEmptyState(msg) {
@@ -261,7 +282,6 @@
                 document.getElementById('u-initials').classList.add('hidden');
             }
 
-            // Рендерим виджет макросов (обновит кнопки редактирования)
             renderMacrosWidget(data.macros);
             
             const select = document.getElementById('prog-filter');
@@ -279,19 +299,13 @@
 
             document.getElementById('loading').style.display = 'none';
             document.getElementById('app-container').classList.remove('hidden', 'opacity-0');
-            
-            // Если режим редактирования был включен при перезагрузке данных - применяем его
-            applyEditModeState(); 
+            applyEditModeState();
         }
 
-        // --- ЛОГИКА РЕДАКТИРОВАНИЯ ---
-        
         function toggleEditMode() {
             isEditMode = !isEditMode;
             const btn = document.getElementById('btn-edit');
             btn.style.color = isEditMode ? '#CCFF00' : '#A1A1AA';
-            
-            // Включаем/выключаем видимость инструментов через JS класс
             applyEditModeState();
         }
 
@@ -300,29 +314,26 @@
             tools.forEach(el => {
                 if (isEditMode) {
                     el.classList.remove('hidden');
-                    el.classList.add('flex'); // Используем flex для центровки
+                    el.classList.add('flex');
                 } else {
                     el.classList.add('hidden');
                     el.classList.remove('flex');
                 }
             });
-            
-            // Особый случай для виджета КБЖУ
             if(globalData && globalData.macros) renderMacrosWidget(globalData.macros);
         }
 
-        // --- WIDGET MACROS ---
         function renderMacrosWidget(macros) {
             const container = document.getElementById('macros-container');
             const hasMacros = macros && macros.cals > 0;
 
             if (hasMacros) {
                 container.innerHTML = `
-                    <div class="bento-card p-5 relative overflow-hidden border-l-4 border-[#CCFF00]">
+                    <div class="bento-card p-5 relative border-l-4 border-[#CCFF00]">
                         <div class="absolute top-0 right-0 w-24 h-24 bg-[#CCFF00] opacity-[0.03] blur-[40px] rounded-full pointer-events-none"></div>
                         <div class="flex justify-between items-center mb-3">
                             <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Твой План</p>
-                             <button onclick="deleteMacros(this)" class="edit-tool ${isEditMode ? 'flex' : 'hidden'} text-red-500 bg-red-500/10 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Удалить</button>
+                            <button onclick="deleteMacros(this)" class="edit-tool ${isEditMode ? 'flex' : 'hidden'} text-red-500 bg-red-500/10 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Удалить</button>
                         </div>
                         <div class="flex items-baseline space-x-2 mb-4">
                             <h3 class="text-3xl font-black italic text-white">${macros.cals}</h3>
@@ -335,7 +346,6 @@
                         </div>
                     </div>`;
             } else {
-                // Если КБЖУ нет - кнопка добавить видна ТОЛЬКО в режиме редактирования
                 container.innerHTML = `
                     <div onclick="openModal('modal-custom-macros')" class="edit-tool ${isEditMode ? 'flex' : 'hidden'} justify-center w-full py-4 border border-dashed border-zinc-800 rounded-2xl text-center text-xs font-bold text-zinc-500 uppercase cursor-pointer hover:border-[#CCFF00] hover:text-[#CCFF00] transition-colors">
                         + Добавить цель КБЖУ
@@ -343,18 +353,17 @@
             }
         }
 
-        // --- КРАСИВЫЕ КАРТОЧКИ РЕКОРДОВ ---
         function renderRecords(list) {
             const container = document.getElementById('u-records');
             if (!list || list.length === 0) { container.innerHTML = '<p class="text-zinc-700 text-xs italic text-center py-4">Нет рекордов</p>'; return; }
             
             container.innerHTML = list.map(r => `
-                <div class="group relative bento-card p-4 mb-3 border-l-4 border-[#CCFF00] overflow-visible">
-                    <button onclick="deleteItem(${r.rowIndex}, this, 'delete_record')" class="edit-tool ${isEditMode ? 'flex' : 'hidden'} absolute -top-2 -right-2 w-8 h-8 bg-red-500/20 text-red-500 rounded-bl-xl items-center justify-center hover:bg-red-500 hover:text-white transition-all z-20">✕</button>
+                <div class="group relative bento-card p-4 mb-3 border-l-4 border-[#CCFF00]">
+                    <button onclick="deleteItem(${r.rowIndex}, this, 'delete_record')" class="edit-tool ${isEditMode ? 'flex' : 'hidden'} absolute top-3 right-3 w-8 h-8 bg-red-500/10 text-red-500 rounded-lg items-center justify-center hover:bg-red-500 hover:text-white transition-all z-20">✕</button>
                     
                     <div class="flex justify-between items-start relative z-10">
                         <div>
-                             <h3 class="text-base font-black uppercase italic text-white leading-tight tracking-wide">${r.name}</h3>
+                             <h3 class="text-base font-black uppercase italic text-white leading-tight tracking-wide pr-8">${r.name}</h3>
                              <p class="text-[10px] text-zinc-500 font-bold mt-1">${r.date}</p>
                         </div>
                         <div class="text-right">
@@ -362,7 +371,7 @@
                                 <span class="text-2xl font-black italic text-[#CCFF00] tracking-tighter">${r.weight}</span>
                                 <span class="text-[10px] font-bold text-zinc-500 uppercase">KG</span>
                             </div>
-                            <span class="inline-block bg-zinc-800 text-zinc-300 text-[9px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider mt-1">${r.reps} reps</span>
+                            <span class="inline-block bg-zinc-800 text-zinc-300 text-[9px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider mt-1">${r.reps} повторов</span>
                         </div>
                     </div>
                 </div>
@@ -381,28 +390,60 @@
                     </div>
                     <div class="flex items-center gap-3">
                         <span class="bg-zinc-900 text-zinc-400 text-[9px] px-2 py-1 rounded font-bold uppercase">${h.time} мин</span>
-                         <button onclick="deleteItem(${h.rowIndex}, this, 'delete_history')" class="edit-tool ${isEditMode ? 'flex' : 'hidden'} text-red-500 w-6 h-6 bg-red-500/10 rounded items-center justify-center">✕</button>
+                        <button onclick="deleteItem(${h.rowIndex}, this, 'delete_history')" class="edit-tool ${isEditMode ? 'flex' : 'hidden'} text-red-500 w-6 h-6 bg-red-500/10 rounded items-center justify-center">✕</button>
                     </div>
                 </div>
             `).join('');
         }
 
-        // --- УДАЛЕНИЕ ---
+        function filterData() {
+            if (!globalData) return;
+            const filter = document.getElementById('prog-filter').value;
+            const filteredHistory = (filter === 'all') ? globalData.history : globalData.history.filter(h => h.program === filter);
+
+            let totalTime = 0, totalWater = 0;
+            filteredHistory.forEach(h => { totalTime += h.time; totalWater += h.water; });
+            
+            document.getElementById('u-count').innerText = filteredHistory.length;
+            document.getElementById('u-water').innerText = (totalWater / 1000).toFixed(1);
+            document.getElementById('u-time').innerText = filteredHistory.length > 0 ? Math.round(totalTime / filteredHistory.length) + " мин" : "0 мин";
+            
+            // Прогресс - скрываем если "Все", иначе считаем
+            const progEl = document.getElementById('u-progress');
+            if (filter === 'all') {
+                progEl.innerText = "-";
+                progEl.style.color = "#555";
+            } else {
+                let prog = "0%";
+                if (filteredHistory.length >= 2) {
+                    const cur = filteredHistory[0].time; const prev = filteredHistory[1].time;
+                    if (prev > 0) { const diff = Math.round(((cur - prev) / prev) * 100); prog = (diff > 0 ? "+" : "") + diff + "%"; }
+                }
+                progEl.innerText = prog;
+                progEl.style.color = prog.includes('-') ? '#FF3B30' : '#CCFF00';
+            }
+
+            renderHistory(filteredHistory);
+        }
+
+        // --- DELETION LOGIC ---
         function deleteItem(rowIndex, btn, actionType) {
             if(!confirm("Удалить запись?")) return;
             const userId = tg.initDataUnsafe?.user?.id;
             
-            // Оптимистичное удаление
+            // UI Update
             const row = btn.closest('.group') || btn.closest('.bento-card');
             row.style.opacity = '0';
             setTimeout(() => row.style.display = 'none', 300);
 
+            // Server Call
             fetch(`${GAS_URL}?id=${userId}&action=${actionType}&row=${rowIndex}`)
                 .then(res => res.json())
                 .then(d => {
                     if(d.success) {
-                        // Фоновое обновление
-                        fetch(`${GAS_URL}?id=${userId}`).then(r => r.json()).then(newdata => { globalData = newdata; });
+                        fetch(`${GAS_URL}?id=${userId}`).then(r => r.json()).then(newdata => { 
+                            globalData = newdata; 
+                        });
                     }
                 });
         }
@@ -421,7 +462,7 @@
                 });
         }
 
-        // --- SUBMIT FUNCTIONS ---
+        // --- SUBMIT ---
         function submitRecord() {
             const name = document.getElementById('rec-name').value;
             const weight = document.getElementById('rec-weight').value;
@@ -452,30 +493,6 @@
             closeModal('modal-custom-macros');
             currentMacros = { cals, p, f, c };
             saveMacros(true);
-        }
-
-        // ... Остальные функции (filterData, saveMacros, calculateMacros, switchTab, open/close Modal) без изменений ...
-        function filterData() {
-            if (!globalData) return;
-            const filter = document.getElementById('prog-filter').value;
-            const filteredHistory = (filter === 'all') ? globalData.history : globalData.history.filter(h => h.program === filter);
-
-            let totalTime = 0, totalWater = 0;
-            filteredHistory.forEach(h => { totalTime += h.time; totalWater += h.water; });
-            
-            document.getElementById('u-count').innerText = filteredHistory.length;
-            document.getElementById('u-water').innerText = (totalWater / 1000).toFixed(1);
-            document.getElementById('u-time').innerText = filteredHistory.length > 0 ? Math.round(totalTime / filteredHistory.length) + " мин" : "0 мин";
-            
-            let prog = "0%";
-            if (filteredHistory.length >= 2) {
-                const cur = filteredHistory[0].time; const prev = filteredHistory[1].time;
-                if (prev > 0) { const diff = Math.round(((cur - prev) / prev) * 100); prog = (diff > 0 ? "+" : "") + diff + "%"; }
-            }
-            const progEl = document.getElementById('u-progress');
-            progEl.innerText = prog; progEl.style.color = prog.includes('-') ? '#FF3B30' : '#CCFF00';
-
-            renderHistory(filteredHistory);
         }
 
         function saveMacros(isCustom = false) {
