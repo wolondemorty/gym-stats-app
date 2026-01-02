@@ -6,210 +6,280 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
     <style>
-        body { background: #000; color: #fff; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
-        .bg-card { background: #0A0A0A; border: 1px solid #141414; border-radius: 24px; }
-        /* Градиент для карточки КБЖУ */
-        .macros-card { background: linear-gradient(145deg, #0A0A0A 0%, #111111 100%); border: 1px solid #222; border-radius: 24px; }
-        .accent-text { color: #CCFF00; }
-        .loader { border: 2px solid #111; border-top: 2px solid #fff; border-radius: 50%; width: 24px; height: 24px; animation: spin 0.8s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Base Settings */
+        :root {
+            --bg-color: #050505;
+            --card-bg: #121212;
+            --accent: #CCFF00;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            padding-bottom: 90px; /* Отступ для нижней панели */
+        }
+
+        /* Components */
+        .glass-nav {
+            background: rgba(18, 18, 18, 0.9);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .bento-card {
+            background-color: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+        }
+        
+        .input-field {
+            background: #1A1A1A; color: white; border: 1px solid transparent; transition: all 0.2s;
+        }
+        .input-field:focus { border-color: var(--accent); outline: none; }
+
+        .action-btn {
+            background: var(--accent); color: black; font-weight: 800; letter-spacing: -0.02em; transition: transform 0.1s;
+        }
+        .action-btn:active { transform: scale(0.96); }
+
+        /* Widget Macros */
+        .macros-widget {
+            background: linear-gradient(135deg, #111 0%, #0a0a0a 100%);
+            border: 1px solid #222;
+            position: relative; overflow: hidden;
+        }
+
+        .loader { width: 24px; height: 24px; border: 2px solid #333; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
         .fade-in { animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* Стили для селекта */
-        .custom-select {
-            background: #0A0A0A; color: white; border: 1px solid #222; 
-            padding: 8px 12px; border-radius: 12px; font-size: 11px; font-weight: bold; text-transform: uppercase;
-            outline: none; -webkit-appearance: none; appearance: none;
-        }
+        select { -webkit-appearance: none; appearance: none; }
     </style>
 </head>
-<body class="px-5 pb-24 select-none overflow-x-hidden">
+<body class="select-none overflow-x-hidden">
 
-    <div id="loading" class="fixed inset-0 flex items-center justify-center bg-black z-50">
-        <div class="loader"></div>
+    <div id="loading" class="fixed inset-0 flex flex-col items-center justify-center bg-black z-50">
+        <span class="loader mb-4"></span>
+        <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.2em]">Загрузка...</p>
     </div>
 
-    <div id="content" class="hidden fade-in">
+    <div id="app-container" class="hidden opacity-0 transition-opacity duration-500">
         
-        <div class="flex items-center justify-center space-x-2 mt-6 mb-6 bg-[#0A0A0A] p-1 rounded-2xl border border-[#141414] w-fit mx-auto">
-            <button onclick="switchTab('stats')" id="tab-btn-stats" class="px-6 py-2 rounded-xl text-xs font-bold uppercase transition-all bg-[#222] text-white shadow-lg">Статистика</button>
-            <button onclick="switchTab('calc')" id="tab-btn-calc" class="px-6 py-2 rounded-xl text-xs font-bold uppercase transition-all text-zinc-500">КБЖУ</button>
-        </div>
-
-        <div class="flex items-center space-x-4 mb-6 px-1">
-            <div class="relative">
-                <img id="u-photo" src="" class="hidden w-14 h-14 rounded-full object-cover border border-white/10">
-                <div id="u-initials" class="w-14 h-14 rounded-full bg-zinc-900 flex items-center justify-center border border-white/5 text-lg font-bold text-zinc-500">..</div>
-            </div>
-            <div>
-                <h1 id="u-name" class="text-lg font-bold tracking-tight">...</h1>
-                <p id="u-sheet" class="text-[9px] text-zinc-600 mt-0.5 italic">...</p>
-            </div>
-        </div>
-
-        <div id="section-stats">
-            
-            <div id="saved-macros-widget" class="hidden macros-card p-5 mb-4 relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-20 h-20 bg-[#CCFF00] opacity-5 blur-[50px] rounded-full pointer-events-none"></div>
-                <div class="flex justify-between items-start mb-3">
-                    <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Твой План (КБЖУ)</p>
-                    <div class="bg-[#CCFF00]/10 px-2 py-0.5 rounded text-[9px] font-bold text-[#CCFF00] uppercase">Active</div>
+        <header class="px-6 pt-6 pb-2 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="relative">
+                    <img id="u-photo" src="" class="w-12 h-12 rounded-full object-cover border border-white/10 hidden">
+                    <div id="u-initials" class="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center text-sm font-bold text-zinc-400">ID</div>
                 </div>
-                <div class="flex items-baseline space-x-1 mb-4">
+                <div>
+                    <h1 id="u-name" class="text-lg font-bold leading-tight">...</h1>
+                    <span id="u-sheet" class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider bg-zinc-900 px-2 py-0.5 rounded-md">Лист: ...</span>
+                </div>
+            </div>
+        </header>
+
+        <section id="tab-stats" class="px-5 pt-4 fade-in">
+            
+            <div id="saved-macros-widget" class="hidden bento-card macros-widget p-5 mb-4">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-[#CCFF00] opacity-[0.03] blur-[40px] rounded-full pointer-events-none"></div>
+                <div class="flex justify-between items-center mb-3">
+                    <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Твой План (КБЖУ)</p>
+                    <div class="w-2 h-2 rounded-full bg-[#CCFF00] shadow-[0_0_10px_#CCFF00]"></div>
+                </div>
+                <div class="flex items-baseline space-x-2 mb-4">
                     <h3 id="m-cals" class="text-3xl font-black italic text-white">0</h3>
                     <span class="text-xs text-zinc-600 font-bold uppercase">ккал</span>
                 </div>
                 <div class="grid grid-cols-3 gap-2">
                     <div class="bg-black/40 p-2 rounded-lg text-center border border-white/5">
                         <p class="text-[8px] text-zinc-500 uppercase font-bold">Белки</p>
-                        <p id="m-prot" class="text-sm font-bold">0</p>
+                        <p id="m-prot" class="text-xs font-bold text-zinc-200">0</p>
                     </div>
                     <div class="bg-black/40 p-2 rounded-lg text-center border border-white/5">
                         <p class="text-[8px] text-zinc-500 uppercase font-bold">Жиры</p>
-                        <p id="m-fats" class="text-sm font-bold">0</p>
+                        <p id="m-fats" class="text-xs font-bold text-zinc-200">0</p>
                     </div>
                     <div class="bg-black/40 p-2 rounded-lg text-center border border-white/5">
                         <p class="text-[8px] text-zinc-500 uppercase font-bold">Угли</p>
-                        <p id="m-carbs" class="text-sm font-bold">0</p>
+                        <p id="m-carbs" class="text-xs font-bold text-zinc-200">0</p>
                     </div>
                 </div>
             </div>
 
-            <div class="flex justify-between items-center mb-4 px-1">
-                <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Обзор</p>
-                <select id="prog-filter" onchange="filterData()" class="custom-select">
-                    <option value="all">Все программы</option>
+            <div class="flex justify-between items-center mb-3 px-1">
+                <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Дашборд</p>
+                <div class="relative">
+                    <select id="prog-filter" onchange="filterData()" class="bg-[#1A1A1A] text-white border border-zinc-800 rounded-lg text-[10px] font-bold uppercase py-1 px-3 outline-none">
+                        <option value="all">Все программы</option>
                     </select>
+                </div>
             </div>
 
             <div class="grid grid-cols-2 gap-3 mb-3">
-                <div class="bg-card p-5">
-                    <p class="text-[9px] text-zinc-500 font-bold uppercase mb-2 tracking-wider">Тренировки</p>
-                    <p id="u-count" class="text-3xl font-black italic">0</p>
+                <div class="bento-card p-5">
+                    <span class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Тренировки</span>
+                    <p id="u-count" class="text-4xl font-black italic tracking-tighter mt-2">0</p>
                 </div>
-                <div class="bg-card p-5">
-                    <p class="text-[9px] text-zinc-500 font-bold uppercase mb-2 tracking-wider">Вода (Л)</p>
-                    <p id="u-water" class="text-3xl font-black italic text-blue-500">0</p>
+                <div class="bento-card p-5">
+                    <span class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Вода (Л)</span>
+                    <p id="u-water" class="text-4xl font-black italic tracking-tighter text-blue-400 mt-2">0</p>
                 </div>
             </div>
 
-            <div class="mt-8 mb-4 flex items-center space-x-4">
-                <h2 class="text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em]">Рекорды</h2>
-                <div class="h-px bg-zinc-900 flex-grow"></div>
+            <div class="bento-card p-5 mb-8 flex justify-between items-center">
+                <div>
+                    <span class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block mb-1">Прогресс</span>
+                    <span id="u-progress" class="text-xl font-bold text-[#CCFF00]">+0%</span>
+                </div>
+                <div class="text-right">
+                     <span class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block mb-1">Ср. время</span>
+                    <span id="u-time" class="text-xl font-bold text-white">0 мин</span>
+                </div>
             </div>
-            <div id="u-records" class="space-y-2"></div>
 
-            <div class="mt-8 mb-4 flex items-center space-x-4">
-                <h2 class="text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em]">История</h2>
-                <div class="h-px bg-zinc-900 flex-grow"></div>
+            <div class="flex items-center gap-4 mb-4">
+                <h2 class="text-xs font-bold text-white uppercase tracking-widest">Личные рекорды</h2>
+                <div class="h-[1px] bg-zinc-800 flex-grow"></div>
             </div>
-            <div id="u-history" class="space-y-3 pb-8"></div>
-        </div>
+            <div id="u-records" class="space-y-3 mb-8"></div>
 
-        <div id="section-calc" class="hidden">
-            <div class="bg-card p-6 mb-6">
-                <h2 class="text-xl font-black italic mb-4">Рассчитать <span class="text-[#CCFF00]">Норму</span></h2>
-                
-                <div class="space-y-4">
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="text-[9px] text-zinc-500 font-bold uppercase">Вес (кг)</label>
-                            <input type="number" id="calc-weight" class="w-full bg-black border border-zinc-800 rounded-xl p-3 text-white font-bold outline-none focus:border-[#CCFF00]" placeholder="80">
-                        </div>
-                        <div>
-                            <label class="text-[9px] text-zinc-500 font-bold uppercase">Рост (см)</label>
-                            <input type="number" id="calc-height" class="w-full bg-black border border-zinc-800 rounded-xl p-3 text-white font-bold outline-none focus:border-[#CCFF00]" placeholder="180">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="text-[9px] text-zinc-500 font-bold uppercase">Возраст</label>
-                            <input type="number" id="calc-age" class="w-full bg-black border border-zinc-800 rounded-xl p-3 text-white font-bold outline-none focus:border-[#CCFF00]" placeholder="25">
-                        </div>
-                        <div>
-                            <label class="text-[9px] text-zinc-500 font-bold uppercase">Пол</label>
-                            <select id="calc-gender" class="w-full bg-black border border-zinc-800 rounded-xl p-3 text-white font-bold outline-none appearance-none">
-                                <option value="male">Муж</option>
-                                <option value="female">Жен</option>
-                            </select>
-                        </div>
+            <div class="flex items-center gap-4 mb-4">
+                <h2 class="text-xs font-bold text-white uppercase tracking-widest">История</h2>
+                <div class="h-[1px] bg-zinc-800 flex-grow"></div>
+            </div>
+            <div id="u-history" class="space-y-3 pb-4"></div>
+        </section>
+
+        <section id="tab-calc" class="px-5 pt-4 hidden">
+            <h2 class="text-2xl font-black italic tracking-tighter mb-6">КАЛЬКУЛЯТОР <span class="text-[#CCFF00]">КБЖУ</span></h2>
+            
+            <div class="space-y-5">
+                <div class="grid grid-cols-2 gap-3 p-1 bg-[#1A1A1A] rounded-xl">
+                    <label class="cursor-pointer">
+                        <input type="radio" name="gender" id="g-male" value="male" class="peer sr-only" checked>
+                        <div class="py-3 text-center text-xs font-bold uppercase rounded-lg text-zinc-500 peer-checked:bg-[#2A2A2A] peer-checked:text-white transition-all">Мужчина</div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="gender" id="g-female" value="female" class="peer sr-only">
+                        <div class="py-3 text-center text-xs font-bold uppercase rounded-lg text-zinc-500 peer-checked:bg-[#2A2A2A] peer-checked:text-white transition-all">Женщина</div>
+                    </label>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[10px] text-zinc-500 font-bold uppercase ml-1">Вес (кг)</label>
+                        <input type="number" id="c-weight" class="input-field w-full p-4 rounded-xl font-bold text-lg mt-1" placeholder="80">
                     </div>
                     <div>
-                        <label class="text-[9px] text-zinc-500 font-bold uppercase">Активность</label>
-                        <select id="calc-act" class="w-full bg-black border border-zinc-800 rounded-xl p-3 text-white font-bold outline-none appearance-none text-xs">
+                        <label class="text-[10px] text-zinc-500 font-bold uppercase ml-1">Рост (см)</label>
+                        <input type="number" id="c-height" class="input-field w-full p-4 rounded-xl font-bold text-lg mt-1" placeholder="180">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] text-zinc-500 font-bold uppercase ml-1">Возраст</label>
+                    <input type="number" id="c-age" class="input-field w-full p-4 rounded-xl font-bold text-lg mt-1" placeholder="25">
+                </div>
+
+                <div>
+                    <label class="text-[10px] text-zinc-500 font-bold uppercase ml-1">Активность</label>
+                    <div class="relative mt-1">
+                        <select id="c-activity" class="input-field w-full p-4 rounded-xl font-bold text-xs appearance-none uppercase">
                             <option value="1.2">Сидячий (1.2)</option>
-                            <option value="1.375">Лёгкая (1.375)</option>
-                            <option value="1.55">Средняя (1.55)</option>
-                            <option value="1.725">Высокая (1.725)</option>
+                            <option value="1.375">Лёгкая (1-3 трен)</option>
+                            <option value="1.55">Средняя (3-5 трен)</option>
+                            <option value="1.725">Высокая (6-7 трен)</option>
                         </select>
+                        <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">▼</div>
                     </div>
-                    <div>
-                        <label class="text-[9px] text-zinc-500 font-bold uppercase">Цель</label>
-                        <select id="calc-goal" class="w-full bg-black border border-zinc-800 rounded-xl p-3 text-white font-bold outline-none appearance-none text-xs">
-                            <option value="cut">Похудение (-15%)</option>
-                            <option value="maintain">Поддержание</option>
-                            <option value="bulk">Набор (+15%)</option>
-                        </select>
-                    </div>
-
-                    <button onclick="calculate()" class="w-full bg-white text-black py-4 rounded-xl font-black uppercase text-sm mt-2 active:scale-95 transition-transform">Рассчитать</button>
                 </div>
+
+                <div>
+                    <label class="text-[10px] text-zinc-500 font-bold uppercase ml-1">Цель</label>
+                    <div class="grid grid-cols-3 gap-2 mt-1">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="goal" value="cut" class="peer sr-only">
+                            <div class="py-3 border border-zinc-800 rounded-xl text-center text-[10px] font-bold uppercase text-zinc-500 peer-checked:border-[#CCFF00] peer-checked:text-[#CCFF00] transition-all">Сушка</div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="goal" value="maintain" class="peer sr-only" checked>
+                            <div class="py-3 border border-zinc-800 rounded-xl text-center text-[10px] font-bold uppercase text-zinc-500 peer-checked:border-white peer-checked:text-white transition-all">Норма</div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="goal" value="bulk" class="peer sr-only">
+                            <div class="py-3 border border-zinc-800 rounded-xl text-center text-[10px] font-bold uppercase text-zinc-500 peer-checked:border-red-500 peer-checked:text-red-500 transition-all">Масса</div>
+                        </label>
+                    </div>
+                </div>
+
+                <button type="button" onclick="calculateMacros()" class="action-btn w-full py-4 rounded-xl text-sm uppercase shadow-[0_0_20px_rgba(204,255,0,0.2)] active:scale-95 transition-transform">Рассчитать</button>
             </div>
 
-            <div id="calc-result" class="hidden bg-[#CCFF00] p-6 rounded-[24px] text-black mb-10">
-                <div class="text-center mb-4">
-                    <p class="text-[10px] font-bold uppercase tracking-widest opacity-60">Результат</p>
-                    <h3 id="res-total" class="text-4xl font-black italic mt-1">0</h3>
-                    <p class="text-xs font-bold uppercase">ккал / день</p>
+            <div id="calc-result" class="hidden mt-8 bento-card p-6 border-t-4 border-[#CCFF00] mb-8">
+                <div class="text-center mb-6">
+                    <p class="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">Твоя норма</p>
+                    <p id="res-total" class="text-4xl font-black text-white mt-1">0</p>
+                    <p class="text-xs font-bold uppercase text-zinc-500">ккал / день</p>
                 </div>
-                <div class="grid grid-cols-3 gap-2 mb-6">
-                    <div class="text-center bg-black/10 p-2 rounded-lg">
-                        <p class="text-[9px] font-bold uppercase opacity-60">Белки</p>
-                        <p id="res-prot" class="font-bold text-lg">0</p>
+                <div class="grid grid-cols-3 gap-2 text-center mb-6">
+                    <div class="bg-zinc-900/50 p-2 rounded-lg">
+                        <p class="text-[9px] text-zinc-500 font-bold uppercase">Белки</p>
+                        <p id="res-p" class="text-lg font-bold">0</p>
                     </div>
-                    <div class="text-center bg-black/10 p-2 rounded-lg">
-                        <p class="text-[9px] font-bold uppercase opacity-60">Жиры</p>
-                        <p id="res-fats" class="font-bold text-lg">0</p>
+                    <div class="bg-zinc-900/50 p-2 rounded-lg">
+                        <p class="text-[9px] text-zinc-500 font-bold uppercase">Жиры</p>
+                        <p id="res-f" class="text-lg font-bold">0</p>
                     </div>
-                    <div class="text-center bg-black/10 p-2 rounded-lg">
-                        <p class="text-[9px] font-bold uppercase opacity-60">Угли</p>
-                        <p id="res-carbs" class="font-bold text-lg">0</p>
+                    <div class="bg-zinc-900/50 p-2 rounded-lg">
+                        <p class="text-[9px] text-zinc-500 font-bold uppercase">Угли</p>
+                        <p id="res-c" class="text-lg font-bold">0</p>
                     </div>
                 </div>
                 
-                <button id="btn-save" onclick="saveMacros()" class="w-full bg-black text-white py-3 rounded-xl font-bold uppercase text-xs flex items-center justify-center space-x-2 active:scale-95 transition-transform">
+                <button id="btn-save" onclick="saveMacros()" class="w-full bg-[#1A1A1A] text-white border border-zinc-800 py-3 rounded-xl font-bold uppercase text-xs flex items-center justify-center space-x-2 active:scale-95 transition-transform hover:bg-[#222]">
                     <span id="save-text">Сохранить в профиль</span>
                 </button>
             </div>
-        </div>
+        </section>
 
     </div>
 
+    <nav class="fixed bottom-0 left-0 right-0 glass-nav h-[80px] pb-5 flex justify-around items-center z-50">
+        <button onclick="switchTab('stats')" id="btn-stats" class="flex flex-col items-center justify-center w-16 h-full group">
+            <svg class="w-6 h-6 text-[#CCFF00] transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            <span class="text-[9px] font-bold uppercase mt-1 text-[#CCFF00] transition-colors duration-300">Статы</span>
+        </button>
+        
+        <button onclick="switchTab('calc')" id="btn-calc" class="flex flex-col items-center justify-center w-16 h-full group">
+            <svg class="w-6 h-6 text-zinc-600 transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+            <span class="text-[9px] font-bold uppercase mt-1 text-zinc-600 transition-colors duration-300">КБЖУ</span>
+        </button>
+    </nav>
+
     <script>
         // --- CONFIG ---
-        const GAS_URL = "https://script.google.com/macros/s/AKfycby95bCwV-VYPgbqumu67NTHSfRG7fFYk4M1r7mK_q6qx8GrLdpoFEPkM4vqfhmqqwrW/exec"; 
-        
+        const GAS_URL = "https://script.google.com/macros/s/AKfycby95bCwV-VYPgbqumu67NTHSfRG7fFYk4M1r7mK_q6qx8GrLdpoFEPkM4vqfhmqqwrW/exec";
+
         const tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
-        // УБИРАЕМ ПОДТВЕРЖДЕНИЕ ЗАКРЫТИЯ
-        tg.disableClosingConfirmation(); 
-        
-        tg.headerColor = '#000000';
-        tg.backgroundColor = '#000000';
+        tg.disableClosingConfirmation();
+        tg.headerColor = '#050505';
+        tg.backgroundColor = '#050505';
 
-        let globalData = null; // Для хранения данных и фильтрации
+        let globalData = null;
+        let currentMacros = null;
 
         window.onload = function() {
             const userId = tg.initDataUnsafe?.user?.id;
-            if (!userId) { 
-               // loadData(12345); // Для теста в браузере
-               document.getElementById('loading').innerHTML = "No ID";
-               return; 
-            }
-            loadData(userId);
+            if (userId) loadData(userId);
+            // else loadData(123456789); // Тест
         };
 
         function loadData(userId) {
@@ -220,10 +290,10 @@
                         globalData = data;
                         renderApp(data);
                     } else {
-                        document.getElementById('loading').innerHTML = data.error;
+                        showError(data.error);
                     }
                 })
-                .catch(e => document.getElementById('loading').innerHTML = "Error");
+                .catch(e => showError("Ошибка соединения"));
         }
 
         function renderApp(data) {
@@ -241,8 +311,15 @@
             // Stats
             document.getElementById('u-count').innerText = data.totalWorkouts;
             document.getElementById('u-water').innerText = data.totalWater;
+            document.getElementById('u-time').innerText = data.avgTime + " мин";
+            
+            // Progress
+            const pEl = document.getElementById('u-progress');
+            pEl.innerText = data.progress;
+            if (data.progress.includes('-')) pEl.style.color = '#FF3B30';
+            else if (data.progress.includes('+')) pEl.style.color = '#CCFF00';
 
-            // Saved Macros
+            // Saved Macros Widget
             if (data.macros && data.macros.cals > 0) {
                 document.getElementById('saved-macros-widget').classList.remove('hidden');
                 document.getElementById('m-cals').innerText = data.macros.cals;
@@ -251,60 +328,57 @@
                 document.getElementById('m-carbs').innerText = data.macros.c + 'г';
             }
 
-            // Program Filter options
+            // Filter
             const select = document.getElementById('prog-filter');
             select.innerHTML = '<option value="all">Все программы</option>';
             if (data.programs) {
-                data.programs.forEach(prog => {
+                data.programs.forEach(p => {
                     const opt = document.createElement('option');
-                    opt.value = prog;
-                    opt.innerText = prog.length > 20 ? prog.substring(0,20)+'...' : prog;
+                    opt.value = p;
+                    opt.innerText = p.length > 20 ? p.substring(0,20)+'...' : p;
                     select.appendChild(opt);
                 });
             }
 
-            // Render Records
             renderRecords(data.records);
-
-            // Render History (Initial)
             renderHistory(data.history);
 
-            // Hide Loader
             document.getElementById('loading').style.display = 'none';
-            document.getElementById('content').classList.remove('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+            setTimeout(() => document.getElementById('app-container').classList.remove('opacity-0'), 50);
         }
 
         function renderRecords(records) {
             const container = document.getElementById('u-records');
-            if (!records || records.length === 0) {
-                container.innerHTML = '<p class="text-zinc-700 text-xs text-center italic">Нет данных</p>';
-                return;
-            }
+            if (!records || records.length === 0) { container.innerHTML = '<p class="text-zinc-700 text-xs italic">Нет рекордов</p>'; return; }
             container.innerHTML = records.map(r => `
-                <div class="bg-card p-4 flex justify-between items-center">
-                    <div>
-                        <p class="text-[9px] text-zinc-500 font-bold uppercase mb-0.5">${r.reps} повт.</p>
-                        <h3 class="text-sm font-bold uppercase italic">${r.name}</h3>
+                <div class="bento-card p-4 flex justify-between items-center active:scale-[0.99] transition-transform">
+                    <div class="flex items-center gap-4">
+                        <div class="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-[9px] font-black text-[#CCFF00]">
+                            ${r.reps}x
+                        </div>
+                        <div class="overflow-hidden">
+                            <h3 class="text-sm font-bold text-white uppercase italic truncate w-32">${r.name}</h3>
+                        </div>
                     </div>
-                    <p class="text-xl font-black italic text-white">${r.weight}<span class="text-[9px] text-zinc-600 ml-1 not-italic font-bold">КГ</span></p>
+                    <div class="text-right">
+                        <p class="text-xl font-black italic tracking-tighter text-white">${r.weight}<span class="text-[9px] text-zinc-600 ml-1 font-bold not-italic">KG</span></p>
+                    </div>
                 </div>
             `).join('');
         }
 
         function renderHistory(history) {
             const container = document.getElementById('u-history');
-            if (!history || history.length === 0) {
-                container.innerHTML = '<p class="text-zinc-700 text-xs text-center italic">Тренировок пока нет</p>';
-                return;
-            }
+            if (!history || history.length === 0) { container.innerHTML = '<p class="text-zinc-700 text-xs italic">Пусто</p>'; return; }
             container.innerHTML = history.map(h => `
                 <div class="flex items-center justify-between py-3 border-b border-zinc-900 last:border-0">
                     <div>
-                        <p class="text-[10px] font-bold text-zinc-400">${h.date}</p>
+                        <p class="text-[10px] font-bold text-zinc-500">${h.date}</p>
                         <p class="text-xs font-bold text-white uppercase">${h.group}</p>
                     </div>
                     <div class="text-right">
-                        <span class="bg-zinc-900 text-zinc-500 text-[9px] px-2 py-1 rounded font-bold uppercase">${h.time} мин</span>
+                        <span class="bg-zinc-900 text-zinc-400 text-[9px] px-2 py-1 rounded font-bold uppercase">${h.time} мин</span>
                     </div>
                 </div>
             `).join('');
@@ -312,29 +386,19 @@
 
         function filterData() {
             if (!globalData) return;
-            const filterVal = document.getElementById('prog-filter').value;
-            
-            // Filter History
-            let filteredHistory = globalData.history;
-            if (filterVal !== 'all') {
-                filteredHistory = globalData.history.filter(h => h.program === filterVal);
-            }
-            renderHistory(filteredHistory);
-            
-            // Recalculate basic stats for the filter (Optional, visual candy)
-            // Note: To do this perfectly we need raw data for all workouts, simplified here to just history filtering
+            const val = document.getElementById('prog-filter').value;
+            const filtered = (val === 'all') ? globalData.history : globalData.history.filter(h => h.program === val);
+            renderHistory(filtered);
         }
 
-        // --- CALCULATOR & SAVE LOGIC ---
-        let currentMacros = null;
-
-        function calculate() {
-            const w = parseFloat(document.getElementById('calc-weight').value);
-            const h = parseFloat(document.getElementById('calc-height').value);
-            const a = parseFloat(document.getElementById('calc-age').value);
-            const gen = document.getElementById('calc-gender').value;
-            const act = parseFloat(document.getElementById('calc-act').value);
-            const goal = document.getElementById('calc-goal').value;
+        // --- CALCULATOR & SAVING ---
+        function calculateMacros() {
+            const w = parseFloat(document.getElementById('c-weight').value);
+            const h = parseFloat(document.getElementById('c-height').value);
+            const a = parseFloat(document.getElementById('c-age').value);
+            const gen = document.querySelector('input[name="gender"]:checked').value;
+            const act = parseFloat(document.getElementById('c-activity').value);
+            const goal = document.querySelector('input[name="goal"]:checked').value;
 
             if (!w || !h || !a) { tg.HapticFeedback.notificationOccurred('error'); return; }
 
@@ -353,69 +417,73 @@
             currentMacros = { cals, p, f, c };
 
             document.getElementById('res-total').innerText = cals;
-            document.getElementById('res-prot').innerText = p + 'г';
-            document.getElementById('res-fats').innerText = f + 'г';
-            document.getElementById('res-carbs').innerText = c + 'г';
-
+            document.getElementById('res-p').innerText = p + 'г';
+            document.getElementById('res-f').innerText = f + 'г';
+            document.getElementById('res-c').innerText = c + 'г';
+            
             document.getElementById('calc-result').classList.remove('hidden');
+            document.getElementById('calc-result').scrollIntoView({ behavior: 'smooth' });
             tg.HapticFeedback.notificationOccurred('success');
         }
 
         function saveMacros() {
             if (!currentMacros) return;
             const userId = tg.initDataUnsafe?.user?.id;
-            
             const btn = document.getElementById('btn-save');
-            const originalText = document.getElementById('save-text').innerText;
             
-            btn.innerHTML = `<div class="loader w-4 h-4 border-black border-t-transparent"></div>`;
+            btn.innerHTML = `<div class="loader w-4 h-4 border-white border-t-transparent"></div>`;
             
-            // Отправляем запрос на сохранение
-            // Используем action=save_macros
-            const url = `${GAS_URL}?id=${userId}&action=save_macros&cals=${currentMacros.cals}&prot=${currentMacros.p}&fats=${currentMacros.f}&carbs=${currentMacros.c}`;
-
-            fetch(url)
+            fetch(`${GAS_URL}?id=${userId}&action=save_macros&cals=${currentMacros.cals}&prot=${currentMacros.p}&fats=${currentMacros.f}&carbs=${currentMacros.c}`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        btn.innerHTML = "✅ Сохранено";
+                        btn.innerHTML = `<span class="text-[#CCFF00]">✓ Сохранено</span>`;
                         tg.HapticFeedback.notificationOccurred('success');
                         
-                        // Обновляем виджет в статистике без перезагрузки
+                        // Update Widget
                         document.getElementById('saved-macros-widget').classList.remove('hidden');
                         document.getElementById('m-cals').innerText = currentMacros.cals;
                         document.getElementById('m-prot').innerText = currentMacros.p + 'г';
                         document.getElementById('m-fats').innerText = currentMacros.f + 'г';
                         document.getElementById('m-carbs').innerText = currentMacros.c + 'г';
 
-                        setTimeout(() => {
-                            btn.innerHTML = `<span id="save-text">Сохранить в профиль</span>`;
-                        }, 2000);
+                        setTimeout(() => btn.innerHTML = `<span>Сохранить в профиль</span>`, 2000);
                     }
                 })
-                .catch(e => {
-                    btn.innerHTML = "Ошибка";
-                });
+                .catch(() => btn.innerHTML = "Ошибка сети");
         }
 
+        // --- NAVIGATION ---
         function switchTab(tab) {
             tg.HapticFeedback.impactOccurred('light');
-            const stats = document.getElementById('section-stats');
-            const calc = document.getElementById('section-calc');
-            const btnS = document.getElementById('tab-btn-stats');
-            const btnC = document.getElementById('tab-btn-calc');
+            const stats = document.getElementById('tab-stats');
+            const calc = document.getElementById('tab-calc');
+            const btnS = document.getElementById('btn-stats');
+            const btnC = document.getElementById('btn-calc');
 
             if (tab === 'stats') {
-                stats.classList.remove('hidden');
+                stats.classList.remove('hidden'); stats.classList.add('fade-in');
                 calc.classList.add('hidden');
-                btnS.className = "px-6 py-2 rounded-xl text-xs font-bold uppercase transition-all bg-[#222] text-white shadow-lg";
-                btnC.className = "px-6 py-2 rounded-xl text-xs font-bold uppercase transition-all text-zinc-500";
+                
+                btnS.querySelector('svg').classList.replace('text-zinc-600', 'text-[#CCFF00]');
+                btnS.querySelector('span').classList.replace('text-zinc-600', 'text-[#CCFF00]');
+                
+                btnC.querySelector('svg').classList.replace('text-[#CCFF00]', 'text-zinc-600');
+                btnC.querySelector('span').classList.replace('text-[#CCFF00]', 'text-zinc-600');
             } else {
                 stats.classList.add('hidden');
-                calc.classList.remove('hidden');
-                btnC.className = "px-6 py-2 rounded-xl text-xs font-bold uppercase transition-all bg-[#CCFF00] text-black shadow-lg";
-                btnS.className = "px-6 py-2 rounded-xl text-xs font-bold uppercase transition-all text-zinc-500";
+                calc.classList.remove('hidden'); calc.classList.add('fade-in');
+                
+                btnC.querySelector('svg').classList.replace('text-zinc-600', 'text-[#CCFF00]');
+                btnC.querySelector('span').classList.replace('text-zinc-600', 'text-[#CCFF00]');
+                
+                btnS.querySelector('svg').classList.replace('text-[#CCFF00]', 'text-zinc-600');
+                btnS.querySelector('span').classList.replace('text-[#CCFF00]', 'text-zinc-600');
             }
+        }
+
+        function showError(msg) {
+            document.getElementById('loading').innerHTML = `<p class="text-red-500 text-xs text-center px-4">${msg}</p>`;
         }
     </script>
 </body>
