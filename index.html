@@ -14,7 +14,7 @@
         .input-field { background: #1A1A1A; color: white; border: 1px solid #333; outline: none; transition: 0.2s; }
         .input-field:focus { border-color: var(--accent); }
         
-        /* ЛОГИКА РЕДАКТИРОВАНИЯ */
+        /* ИСПРАВЛЕННОЕ ПЕРЕКЛЮЧЕНИЕ РЕДАКТОРА */
         .edit-tool { display: none !important; }
         body.edit-mode .edit-tool { display: flex !important; }
         
@@ -99,8 +99,14 @@
         
         <header class="px-6 pt-6 pb-2 flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <div class="relative"><img id="u-photo" src="" class="w-10 h-10 rounded-full object-cover border border-white/10 hidden"><div id="u-initials" class="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-400">ID</div></div>
-                <div><h1 id="u-name" class="text-md font-bold leading-tight">...</h1><span id="u-sheet" class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Загрузка...</span></div>
+                <div class="relative">
+                    <img id="u-photo" src="" class="w-10 h-10 rounded-full object-cover border border-white/10 hidden">
+                    <div id="u-initials" class="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-400">ID</div>
+                </div>
+                <div>
+                    <h1 id="u-name" class="text-md font-bold leading-tight">...</h1>
+                    <span id="u-sheet" class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Загрузка...</span>
+                </div>
             </div>
             <button onclick="toggleEditMode()" id="btn-edit" class="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center text-zinc-400 hover:text-white transition-colors active:scale-95">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
@@ -109,80 +115,196 @@
 
         <section id="tab-stats" class="px-5 pt-4 fade-in">
             <div id="macros-container" class="mb-4"></div>
+
             <div class="flex justify-between items-center mb-3 px-1">
                 <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Дашборд</p>
-                <div class="relative"><select id="prog-filter" onchange="filterData()" class="bg-[#1A1A1A] text-white border border-zinc-800 rounded-lg text-[10px] font-bold uppercase py-1 px-3 outline-none"><option value="all">Все программы</option></select></div>
+                <div class="relative">
+                    <select id="prog-filter" onchange="filterData()" class="bg-[#1A1A1A] text-white border border-zinc-800 rounded-lg text-[10px] font-bold uppercase py-1 px-3 outline-none">
+                        <option value="all">Все программы</option>
+                    </select>
+                </div>
             </div>
+
             <div class="grid grid-cols-2 gap-3 mb-3">
-                <div class="bento-card p-4"><span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Тренировки</span><p id="u-count" class="text-3xl font-black italic tracking-tighter mt-1">0</p></div>
-                <div class="bento-card p-4"><span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Вода (Л)</span><p id="u-water" class="text-3xl font-black italic tracking-tighter text-blue-400 mt-1">0</p></div>
+                <div class="bento-card p-4">
+                    <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Тренировки</span>
+                    <p id="u-count" class="text-3xl font-black italic tracking-tighter mt-1">0</p>
+                </div>
+                <div class="bento-card p-4">
+                    <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Вода (Л)</span>
+                    <p id="u-water" class="text-3xl font-black italic tracking-tighter text-blue-400 mt-1">0</p>
+                </div>
             </div>
+
             <div class="bento-card p-4 mb-6 flex justify-between items-center">
-                <div><span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block mb-1">Прогресс</span><span id="u-progress" class="text-lg font-bold text-[#CCFF00]">+0%</span></div>
-                <div class="text-right"><span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block mb-1">Ср. время</span><span id="u-time" class="text-lg font-bold text-white">0 мин</span></div>
+                <div>
+                    <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block mb-1">Прогресс</span>
+                    <span id="u-progress" class="text-lg font-bold text-[#CCFF00]">+0%</span>
+                </div>
+                <div class="text-right">
+                     <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block mb-1">Ср. время</span>
+                    <span id="u-time" class="text-lg font-bold text-white">0 мин</span>
+                </div>
             </div>
-            <div class="flex items-center justify-between mb-3 px-1"><h2 class="text-xs font-bold text-white uppercase tracking-widest">Рекорды</h2><button onclick="openModal('modal-record')" class="edit-tool bg-zinc-800 text-[#CCFF00] px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase border border-zinc-700">+ Добавить</button></div>
+
+            <div class="flex items-center justify-between mb-3 px-1">
+                <h2 class="text-xs font-bold text-white uppercase tracking-widest">Рекорды</h2>
+                <button onclick="openModal('modal-record')" class="edit-tool bg-zinc-800 text-[#CCFF00] px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase border border-zinc-700">+ Добавить</button>
+            </div>
             <div id="u-records" class="space-y-3 mb-8"></div>
-            <div class="flex items-center justify-between mb-3 px-1"><h2 class="text-xs font-bold text-white uppercase tracking-widest">История</h2><button onclick="openModal('modal-workout')" class="edit-tool bg-zinc-800 text-[#CCFF00] px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase border border-zinc-700">+ Вручную</button></div>
+
+            <div class="flex items-center justify-between mb-3 px-1">
+                <h2 class="text-xs font-bold text-white uppercase tracking-widest">История</h2>
+                <button onclick="openModal('modal-workout')" class="edit-tool bg-zinc-800 text-[#CCFF00] px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase border border-zinc-700">+ Вручную</button>
+            </div>
             <div id="u-history" class="space-y-2 pb-4"></div>
         </section>
 
         <section id="tab-calc" class="px-5 pt-4 hidden fade-in">
              <h2 class="text-2xl font-black italic tracking-tighter mb-6">КАЛЬКУЛЯТОР <span class="text-[#CCFF00]">КБЖУ</span></h2>
              <div class="space-y-5">
-                <div class="grid grid-cols-2 gap-3 p-1 bg-[#1A1A1A] rounded-xl"><label class="cursor-pointer"><input type="radio" name="gender" value="male" class="peer sr-only" checked><div class="py-3 text-center text-xs font-bold uppercase rounded-lg text-zinc-500 peer-checked:bg-[#2A2A2A] peer-checked:text-white transition-all">Мужчина</div></label><label class="cursor-pointer"><input type="radio" name="gender" value="female" class="peer sr-only"><div class="py-3 text-center text-xs font-bold uppercase rounded-lg text-zinc-500 peer-checked:bg-[#2A2A2A] peer-checked:text-white transition-all">Женщина</div></label></div>
-                <div class="grid grid-cols-2 gap-3"><input type="number" id="c-weight" class="input-field w-full p-4 rounded-2xl font-bold text-sm" placeholder="Вес (кг)"><input type="number" id="c-height" class="input-field w-full p-4 rounded-2xl font-bold text-sm" placeholder="Рост (см)"></div>
+                <div class="grid grid-cols-2 gap-3 p-1 bg-[#1A1A1A] rounded-xl">
+                    <label class="cursor-pointer"><input type="radio" name="gender" value="male" class="peer sr-only" checked><div class="py-3 text-center text-xs font-bold uppercase rounded-lg text-zinc-500 peer-checked:bg-[#2A2A2A] peer-checked:text-white transition-all">Мужчина</div></label>
+                    <label class="cursor-pointer"><input type="radio" name="gender" value="female" class="peer sr-only"><div class="py-3 text-center text-xs font-bold uppercase rounded-lg text-zinc-500 peer-checked:bg-[#2A2A2A] peer-checked:text-white transition-all">Женщина</div></label>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="number" id="c-weight" class="input-field w-full p-4 rounded-2xl font-bold text-sm" placeholder="Вес (кг)">
+                    <input type="number" id="c-height" class="input-field w-full p-4 rounded-2xl font-bold text-sm" placeholder="Рост (см)">
+                </div>
                 <input type="number" id="c-age" class="input-field w-full p-4 rounded-2xl font-bold text-sm" placeholder="Возраст">
-                <div class="relative"><select id="c-activity" class="input-field w-full p-4 rounded-2xl font-bold text-xs appearance-none uppercase"><option value="1.2">Сидячий (1.2)</option><option value="1.375">Лёгкая (1-3/нед)</option><option value="1.55">Средняя (3-5/нед)</option><option value="1.725">Высокая (6-7/нед)</option></select></div>
-                <div class="grid grid-cols-3 gap-2"><label class="cursor-pointer"><input type="radio" name="goal" value="cut" class="peer sr-only"><div class="py-3 border border-zinc-800 rounded-xl text-center text-[10px] font-bold uppercase text-zinc-500 peer-checked:border-[#CCFF00] peer-checked:text-[#CCFF00]">Сушка</div></label><label class="cursor-pointer"><input type="radio" name="goal" value="maintain" class="peer sr-only" checked><div class="py-3 border border-zinc-800 rounded-xl text-center text-[10px] font-bold uppercase text-zinc-500 peer-checked:border-white peer-checked:text-white">Норма</div></label><label class="cursor-pointer"><input type="radio" name="goal" value="bulk" class="peer sr-only"><div class="py-3 border border-zinc-800 rounded-xl text-center text-[10px] font-bold uppercase text-zinc-500 peer-checked:border-red-500 peer-checked:text-red-500">Масса</div></label></div>
+                <div class="relative">
+                    <select id="c-activity" class="input-field w-full p-4 rounded-2xl font-bold text-xs appearance-none uppercase">
+                        <option value="1.2">Сидячий (1.2)</option>
+                        <option value="1.375">Лёгкая (1-3/нед)</option>
+                        <option value="1.55">Средняя (3-5/нед)</option>
+                        <option value="1.725">Высокая (6-7/нед)</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <label class="cursor-pointer"><input type="radio" name="goal" value="cut" class="peer sr-only"><div class="py-3 border border-zinc-800 rounded-xl text-center text-[10px] font-bold uppercase text-zinc-500 peer-checked:border-[#CCFF00] peer-checked:text-[#CCFF00]">Сушка</div></label>
+                    <label class="cursor-pointer"><input type="radio" name="goal" value="maintain" class="peer sr-only" checked><div class="py-3 border border-zinc-800 rounded-xl text-center text-[10px] font-bold uppercase text-zinc-500 peer-checked:border-white peer-checked:text-white">Норма</div></label>
+                    <label class="cursor-pointer"><input type="radio" name="goal" value="bulk" class="peer sr-only"><div class="py-3 border border-zinc-800 rounded-xl text-center text-[10px] font-bold uppercase text-zinc-500 peer-checked:border-red-500 peer-checked:text-red-500">Масса</div></label>
+                </div>
                 <button type="button" onclick="calculateMacros()" class="w-full bg-[#CCFF00] text-black py-4 rounded-2xl font-black uppercase text-sm shadow-[0_0_20px_rgba(204,255,0,0.2)] active:scale-95 transition-transform">Рассчитать</button>
             </div>
             <div id="calc-result" class="hidden mt-8 bento-card p-6 border-t-4 border-[#CCFF00] mb-8">
-                <div class="text-center mb-4"><h3 id="res-total" class="text-4xl font-black italic text-white">0</h3><p class="text-xs font-bold uppercase text-zinc-500">ккал / день</p></div>
-                <div class="grid grid-cols-3 gap-2 text-center mb-6"><div class="bg-zinc-900/50 p-2 rounded-lg"><p class="text-[9px] font-bold uppercase text-zinc-500">Белки</p><p id="res-p" class="font-bold text-sm">0</p></div><div class="bg-zinc-900/50 p-2 rounded-lg"><p class="text-[9px] font-bold uppercase text-zinc-500">Жиры</p><p id="res-f" class="font-bold text-sm">0</p></div><div class="bg-zinc-900/50 p-2 rounded-lg"><p class="text-[9px] font-bold uppercase text-zinc-500">Угли</p><p id="res-c" class="font-bold text-sm">0</p></div></div>
+                <div class="text-center mb-4">
+                    <h3 id="res-total" class="text-4xl font-black italic text-white">0</h3>
+                    <p class="text-xs font-bold uppercase text-zinc-500">ккал / день</p>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center mb-6">
+                    <div class="bg-zinc-900/50 p-2 rounded-lg"><p class="text-[9px] font-bold uppercase text-zinc-500">Белки</p><p id="res-p" class="font-bold text-sm">0</p></div>
+                    <div class="bg-zinc-900/50 p-2 rounded-lg"><p class="text-[9px] font-bold uppercase text-zinc-500">Жиры</p><p id="res-f" class="font-bold text-sm">0</p></div>
+                    <div class="bg-zinc-900/50 p-2 rounded-lg"><p class="text-[9px] font-bold uppercase text-zinc-500">Угли</p><p id="res-c" class="font-bold text-sm">0</p></div>
+                </div>
                 <button id="btn-save" onclick="saveMacros()" class="w-full bg-[#1A1A1A] text-white border border-zinc-800 py-3 rounded-2xl font-bold uppercase text-xs active:scale-95 transition-transform">Сохранить в профиль</button>
             </div>
         </section>
 
         <nav class="fixed bottom-0 left-0 right-0 glass-nav h-[80px] pb-5 flex justify-around items-center z-50">
-            <button onclick="switchTab('stats')" id="btn-stats" class="flex flex-col items-center justify-center w-16 h-full group"><svg class="w-6 h-6 text-[#CCFF00] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg><span class="text-[9px] font-bold uppercase mt-1 text-[#CCFF00]">Статы</span></button>
-            <button onclick="switchTab('calc')" id="btn-calc" class="flex flex-col items-center justify-center w-16 h-full group"><svg class="w-6 h-6 text-zinc-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg><span class="text-[9px] font-bold uppercase mt-1 text-zinc-600">КБЖУ</span></button>
+            <button onclick="switchTab('stats')" id="btn-stats" class="flex flex-col items-center justify-center w-16 h-full group">
+                <svg class="w-6 h-6 text-[#CCFF00] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                <span class="text-[9px] font-bold uppercase mt-1 text-[#CCFF00]">Статы</span>
+            </button>
+            <button onclick="switchTab('calc')" id="btn-calc" class="flex flex-col items-center justify-center w-16 h-full group">
+                <svg class="w-6 h-6 text-zinc-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                <span class="text-[9px] font-bold uppercase mt-1 text-zinc-600">КБЖУ</span>
+            </button>
         </nav>
     </div>
 
     <script>
-        // === ВСТАВЬ СЮДА ОБЫЧНУЮ ССЫЛКУ ===
-        const GAS_URL = "https://script.google.com/macros/s/AKfycby95bCwV-VYPgbqumu67NTHSfRG7fFYk4M1r7mK_q6qx8GrLdpoFEPkM4vqfhmqqwrW/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycby95bCwV-VYPgbqumu67NTHSfRG7fFYk4M1r7mK_q6qx8GrLdpoFEPkM4vqfhmqqwrW/exec"; 
 
         const tg = window.Telegram.WebApp;
         tg.ready(); tg.expand(); tg.disableClosingConfirmation();
         tg.headerColor = '#050505'; tg.backgroundColor = '#050505';
-
-        // Берем цифровую подпись (ЭТО КЛЮЧ К БЕЗОПАСНОСТИ)
-        const initData = encodeURIComponent(tg.initData || "");
 
         let globalData = null;
         let isEditMode = false;
         let currentMacros = null;
 
         window.onload = () => {
-            loadData();
+            const userId = tg.initDataUnsafe?.user?.id;
+            if (userId) loadData(userId);
+            // else loadData(123456789); // Тест для браузера
         };
 
-        function loadData() {
-            // ОТПРАВЛЯЕМ ПОДПИСЬ, А НЕ ID
-            fetch(`${GAS_URL}?initData=${initData}`)
+        function loadData(userId) {
+            // ИСПОЛЬЗУЕМ ОБЫЧНЫЙ ID
+            fetch(`${GAS_URL}?id=${userId}`)
                 .then(res => res.json())
                 .then(data => {
-                    if (data.error === "Access denied") { showAccessDenied(data); return; }
-                    if (data.success) { globalData = data; renderApp(data); } else { renderEmptyState(data.error); }
+                    // ЕСЛИ ДОСТУП ЗАКРЫТ - ПОКАЗЫВАЕМ ЭКРАН "НЕТ ДОСТУПА"
+                    if (data.error === "Access denied") {
+                        showAccessDenied(data);
+                        return;
+                    }
+
+                    if (data.success) {
+                        globalData = data;
+                        renderApp(data);
+                    } else {
+                        renderEmptyState(data.error);
+                    }
                 })
-                .catch(e => renderEmptyState("Ошибка сети"));
+                .catch(e => renderEmptyState("Ошибка соединения"));
         }
 
+        function showAccessDenied(data) {
+            document.getElementById('loading').style.display = 'none';
+            // Показываем экран блокировки
+            document.getElementById('access-denied').classList.remove('hidden');
+            
+            // Заполняем фото и имя (если сервер их вернул)
+            if(data.photo) {
+                document.getElementById('ad-photo').src = data.photo;
+                document.getElementById('ad-photo').classList.remove('grayscale');
+            }
+            if(data.name) document.getElementById('ad-name').innerText = data.name;
+        }
+
+        function renderEmptyState(msg) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('app-container').classList.remove('hidden', 'opacity-0');
+            document.getElementById('u-sheet').innerText = msg;
+            globalData = { history: [], records: [], macros: {cals:0}, programs: [] };
+            renderApp(globalData);
+        }
+
+        function renderApp(data) {
+            if (data.name) document.getElementById('u-name').innerText = data.name;
+            if (data.sheet) document.getElementById('u-sheet').innerText = "Лист: " + data.sheet;
+            if (data.photo) {
+                document.getElementById('u-photo').src = data.photo;
+                document.getElementById('u-photo').classList.remove('hidden');
+                document.getElementById('u-initials').classList.add('hidden');
+            }
+
+            renderMacrosWidget(data.macros);
+            
+            const select = document.getElementById('prog-filter');
+            select.innerHTML = '<option value="all">Все программы</option>';
+            if (data.programs) {
+                data.programs.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p; opt.innerText = p.length > 20 ? p.substring(0,20)+'...' : p;
+                    select.appendChild(opt);
+                });
+            }
+
+            filterData();
+            renderRecords(data.records);
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('app-container').classList.remove('hidden', 'opacity-0');
+            applyEditModeState();
+        }
+
+        // --- ИСПРАВЛЕННОЕ ПЕРЕКЛЮЧЕНИЕ РЕДАКТОРА ---
         function toggleEditMode() {
             isEditMode = !isEditMode;
-            // Переключаем класс на body, чтобы CSS показал кнопки
+            // Переключаем класс у BODY, чтобы CSS сам показал/скрыл кнопки
             document.body.classList.toggle('edit-mode');
             
             const btn = document.getElementById('btn-edit');
@@ -191,27 +313,234 @@
             if(globalData && globalData.macros) renderMacrosWidget(globalData.macros);
         }
 
-        function showAccessDenied(d){document.getElementById('loading').style.display='none';document.getElementById('access-denied').classList.remove('hidden');if(d.photo){document.getElementById('ad-photo').src=d.photo;document.getElementById('ad-photo').classList.remove('grayscale');}if(d.name)document.getElementById('ad-name').innerText=d.name;}
-        function renderEmptyState(m){document.getElementById('loading').style.display='none';document.getElementById('app-container').classList.remove('hidden','opacity-0');document.getElementById('u-sheet').innerText=m;globalData={history:[],records:[],macros:{cals:0},programs:[]};renderApp(globalData);}
-        function renderApp(d){if(d.name)document.getElementById('u-name').innerText=d.name;if(d.sheet)document.getElementById('u-sheet').innerText="Лист: "+d.sheet;if(d.photo){document.getElementById('u-photo').src=d.photo;document.getElementById('u-photo').classList.remove('hidden');document.getElementById('u-initials').classList.add('hidden');}renderMacrosWidget(d.macros);const s=document.getElementById('prog-filter');s.innerHTML='<option value="all">Все программы</option>';if(d.programs)d.programs.forEach(p=>{const o=document.createElement('option');o.value=p;o.innerText=p.length>20?p.substring(0,20)+'...':p;s.appendChild(o);});filterData();renderRecords(d.records);document.getElementById('loading').style.display='none';document.getElementById('app-container').classList.remove('hidden','opacity-0');}
+        function applyEditModeState() {
+             // Эта функция больше не нужна для переключения, т.к. CSS делает это сам.
+             // Оставляем только для перерисовки макросов, если нужно.
+             if(globalData && globalData.macros) renderMacrosWidget(globalData.macros);
+        }
+
+        function renderMacrosWidget(macros) {
+            const container = document.getElementById('macros-container');
+            const hasMacros = macros && macros.cals > 0;
+
+            if (hasMacros) {
+                container.innerHTML = `
+                    <div class="bento-card p-5 relative border-l-4 border-[#CCFF00]">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-[#CCFF00] opacity-[0.03] blur-[40px] rounded-full pointer-events-none"></div>
+                        <div class="flex justify-between items-center mb-3">
+                            <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Твой План</p>
+                            <button onclick="deleteMacros(this)" class="edit-tool text-red-500 bg-red-500/10 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Удалить</button>
+                        </div>
+                        <div class="flex items-baseline space-x-2 mb-4">
+                            <h3 class="text-3xl font-black italic text-white">${macros.cals}</h3>
+                            <span class="text-xs text-zinc-600 font-bold uppercase">ккал</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="bg-black/40 p-2 rounded-lg text-center"><p class="text-[8px] text-zinc-500 uppercase font-bold">Белки</p><p class="text-xs font-bold text-zinc-200">${macros.p}</p></div>
+                            <div class="bg-black/40 p-2 rounded-lg text-center"><p class="text-[8px] text-zinc-500 uppercase font-bold">Жиры</p><p class="text-xs font-bold text-zinc-200">${macros.f}</p></div>
+                            <div class="bg-black/40 p-2 rounded-lg text-center"><p class="text-[8px] text-zinc-500 uppercase font-bold">Угли</p><p class="text-xs font-bold text-zinc-200">${macros.c}</p></div>
+                        </div>
+                    </div>`;
+            } else {
+                container.innerHTML = `
+                    <div onclick="openModal('modal-custom-macros')" class="edit-tool justify-center w-full py-4 border border-dashed border-zinc-800 rounded-2xl text-center text-xs font-bold text-zinc-500 uppercase cursor-pointer hover:border-[#CCFF00] hover:text-[#CCFF00] transition-colors">
+                        + Добавить цель КБЖУ
+                    </div>`;
+            }
+        }
+
+        function renderRecords(list) {
+            const container = document.getElementById('u-records');
+            if (!list || list.length === 0) { container.innerHTML = '<p class="text-zinc-700 text-xs italic text-center py-4">Нет рекордов</p>'; return; }
+            
+            container.innerHTML = list.map(r => `
+                <div class="group relative bento-card p-4 mb-3 border-l-4 border-[#CCFF00]">
+                    <button onclick="deleteItem(${r.rowIndex}, this, 'delete_record')" class="edit-tool absolute top-3 right-3 w-8 h-8 bg-red-500/10 text-red-500 rounded-lg items-center justify-center hover:bg-red-500 hover:text-white transition-all z-20">✕</button>
+                    
+                    <div class="flex justify-between items-start relative z-10">
+                        <div>
+                             <h3 class="text-base font-black uppercase italic text-white leading-tight tracking-wide pr-8">${r.name}</h3>
+                             <p class="text-[10px] text-zinc-500 font-bold mt-1">${r.date}</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="flex items-baseline justify-end gap-1">
+                                <span class="text-2xl font-black italic text-[#CCFF00] tracking-tighter">${r.weight}</span>
+                                <span class="text-[10px] font-bold text-zinc-500 uppercase">KG</span>
+                            </div>
+                            <span class="inline-block bg-zinc-800 text-zinc-300 text-[9px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider mt-1">${r.reps} повторов</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderHistory(list) {
+            const container = document.getElementById('u-history');
+            if (!list || list.length === 0) { container.innerHTML = '<p class="text-zinc-700 text-xs italic text-center py-4">Нет данных</p>'; return; }
+            
+            container.innerHTML = list.map(h => `
+                <div class="flex items-center justify-between py-3 border-b border-zinc-900 last:border-0 group relative">
+                    <div>
+                        <p class="text-[10px] font-bold text-zinc-500">${h.date}</p>
+                        <p class="text-xs font-bold text-white uppercase">${h.group}</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="bg-zinc-900 text-zinc-400 text-[9px] px-2 py-1 rounded font-bold uppercase">${h.time} мин</span>
+                        <button onclick="deleteItem(${h.rowIndex}, this, 'delete_history')" class="edit-tool text-red-500 w-6 h-6 bg-red-500/10 rounded items-center justify-center">✕</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterData() {
+            if (!globalData) return;
+            const filter = document.getElementById('prog-filter').value;
+            const filteredHistory = (filter === 'all') ? globalData.history : globalData.history.filter(h => h.program === filter);
+
+            let totalTime = 0, totalWater = 0;
+            filteredHistory.forEach(h => { totalTime += h.time; totalWater += h.water; });
+            
+            document.getElementById('u-count').innerText = filteredHistory.length;
+            document.getElementById('u-water').innerText = (totalWater / 1000).toFixed(1);
+            document.getElementById('u-time').innerText = filteredHistory.length > 0 ? Math.round(totalTime / filteredHistory.length) + " мин" : "0 мин";
+            
+            const progEl = document.getElementById('u-progress');
+            if (filter === 'all') {
+                progEl.innerText = "-";
+                progEl.style.color = "#555";
+            } else {
+                let prog = "0%";
+                if (filteredHistory.length >= 2) {
+                    const cur = filteredHistory[0].time; const prev = filteredHistory[1].time;
+                    if (prev > 0) { const diff = Math.round(((cur - prev) / prev) * 100); prog = (diff > 0 ? "+" : "") + diff + "%"; }
+                }
+                progEl.innerText = prog;
+                progEl.style.color = prog.includes('-') ? '#FF3B30' : '#CCFF00';
+            }
+
+            renderHistory(filteredHistory);
+        }
+
+        // --- ФУНКЦИИ ОТПРАВКИ (ИСПОЛЬЗУЮТ ОБЫЧНЫЙ ID) ---
+        function deleteItem(rowIndex, btn, actionType) {
+            if(!confirm("Удалить запись?")) return;
+            const userId = tg.initDataUnsafe?.user?.id;
+            
+            const row = btn.closest('.group') || btn.closest('.bento-card');
+            row.style.opacity = '0';
+            setTimeout(() => row.style.display = 'none', 300);
+
+            fetch(`${GAS_URL}?id=${userId}&action=${actionType}&row=${rowIndex}`)
+                .then(res => res.json())
+                .then(d => {
+                    if(d.success) {
+                        fetch(`${GAS_URL}?id=${userId}`).then(r => r.json()).then(newdata => { 
+                            globalData = newdata; 
+                        });
+                    }
+                });
+        }
         
-        function renderMacrosWidget(m){const c=document.getElementById('macros-container');if(m&&m.cals>0){c.innerHTML=`<div class="bento-card p-5 relative border-l-4 border-[#CCFF00]"><div class="absolute top-0 right-0 w-24 h-24 bg-[#CCFF00] opacity-[0.03] blur-[40px] rounded-full pointer-events-none"></div><div class="flex justify-between items-center mb-3"><p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Твой План</p><button onclick="deleteMacros(this)" class="edit-tool ${isEditMode?'flex':'hidden'} text-red-500 bg-red-500/10 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Удалить</button></div><div class="flex items-baseline space-x-2 mb-4"><h3 class="text-3xl font-black italic text-white">${m.cals}</h3><span class="text-xs text-zinc-600 font-bold uppercase">ккал</span></div><div class="grid grid-cols-3 gap-2"><div class="bg-black/40 p-2 rounded-lg text-center"><p class="text-[8px] text-zinc-500 uppercase font-bold">Белки</p><p class="text-xs font-bold text-zinc-200">${m.p}</p></div><div class="bg-black/40 p-2 rounded-lg text-center"><p class="text-[8px] text-zinc-500 uppercase font-bold">Жиры</p><p class="text-xs font-bold text-zinc-200">${m.f}</p></div><div class="bg-black/40 p-2 rounded-lg text-center"><p class="text-[8px] text-zinc-500 uppercase font-bold">Угли</p><p class="text-xs font-bold text-zinc-200">${m.c}</p></div></div></div>`;}else{c.innerHTML=`<div onclick="openModal('modal-custom-macros')" class="edit-tool ${isEditMode?'flex':'hidden'} justify-center w-full py-4 border border-dashed border-zinc-800 rounded-2xl text-center text-xs font-bold text-zinc-500 uppercase cursor-pointer hover:border-[#CCFF00] hover:text-[#CCFF00] transition-colors">+ Добавить цель КБЖУ</div>`;}}
+        function deleteMacros(btn) {
+            if(!confirm("Удалить КБЖУ?")) return;
+            const userId = tg.initDataUnsafe?.user?.id;
+            fetch(`${GAS_URL}?id=${userId}&action=delete_macros`)
+                .then(res => res.json())
+                .then(d => {
+                    if(d.success) {
+                        globalData.macros = {cals:0};
+                        renderMacrosWidget(globalData.macros);
+                        tg.HapticFeedback.notificationOccurred('success');
+                    }
+                });
+        }
+
+        function submitRecord() {
+            const name = document.getElementById('rec-name').value;
+            const weight = document.getElementById('rec-weight').value;
+            const reps = document.getElementById('rec-reps').value;
+            if(!name) return;
+            closeModal('modal-record');
+            const userId = tg.initDataUnsafe?.user?.id;
+            fetch(`${GAS_URL}?id=${userId}&action=add_record&name=${name}&weight=${weight}&reps=${reps}`).then(r => loadData(userId));
+        }
+
+        function submitWorkout() {
+            const prog = document.getElementById('work-prog').value;
+            const time = document.getElementById('work-time').value;
+            if(!time) return;
+            closeModal('modal-workout');
+            const userId = tg.initDataUnsafe?.user?.id;
+            const group = document.getElementById('work-group').value;
+            const water = document.getElementById('work-water').value;
+            fetch(`${GAS_URL}?id=${userId}&action=add_workout&prog=${prog}&group=${group}&time=${time}&water=${water}`).then(r => loadData(userId));
+        }
         
-        function renderRecords(l){const c=document.getElementById('u-records');if(!l||l.length===0){c.innerHTML='<p class="text-zinc-700 text-xs italic text-center py-4">Нет рекордов</p>';return;}c.innerHTML=l.map(r=>`<div class="group relative bento-card p-4 mb-3 border-l-4 border-[#CCFF00]"><button onclick="deleteItem(${r.rowIndex},this,'delete_record')" class="edit-tool ${isEditMode?'flex':'hidden'} absolute top-3 right-3 w-8 h-8 bg-red-500/10 text-red-500 rounded-lg items-center justify-center hover:bg-red-500 hover:text-white transition-all z-20">✕</button><div class="flex justify-between items-start relative z-10"><div><h3 class="text-base font-black uppercase italic text-white leading-tight tracking-wide pr-8">${r.name}</h3><p class="text-[10px] text-zinc-500 font-bold mt-1">${r.date}</p></div><div class="text-right"><div class="flex items-baseline justify-end gap-1"><span class="text-2xl font-black italic text-[#CCFF00] tracking-tighter">${r.weight}</span><span class="text-[10px] font-bold text-zinc-500 uppercase">KG</span></div><span class="inline-block bg-zinc-800 text-zinc-300 text-[9px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider mt-1">${r.reps} повторов</span></div></div></div>`).join('');}
-        function renderHistory(l){const c=document.getElementById('u-history');if(!l||l.length===0){c.innerHTML='<p class="text-zinc-700 text-xs italic text-center py-4">Нет данных</p>';return;}c.innerHTML=l.map(h=>`<div class="flex items-center justify-between py-3 border-b border-zinc-900 last:border-0 group relative"><div><p class="text-[10px] font-bold text-zinc-500">${h.date}</p><p class="text-xs font-bold text-white uppercase">${h.group}</p></div><div class="flex items-center gap-3"><span class="bg-zinc-900 text-zinc-400 text-[9px] px-2 py-1 rounded font-bold uppercase">${h.time} мин</span><button onclick="deleteItem(${h.rowIndex},this,'delete_history')" class="edit-tool ${isEditMode?'flex':'hidden'} text-red-500 w-6 h-6 bg-red-500/10 rounded items-center justify-center">✕</button></div></div>`).join('');}
-        function filterData(){if(!globalData)return;const f=document.getElementById('prog-filter').value,h=(f==='all')?globalData.history:globalData.history.filter(i=>i.program===f);let t=0,w=0;h.forEach(i=>{t+=i.time;w+=i.water;});document.getElementById('u-count').innerText=h.length;document.getElementById('u-water').innerText=(w/1000).toFixed(1);document.getElementById('u-time').innerText=h.length>0?Math.round(t/h.length)+" мин":"0 мин";const p=document.getElementById('u-progress');if(f==='all'){p.innerText="-";p.style.color="#555";}else{let v="0%";if(h.length>=2){const c=h[0].time,pr=h[1].time;if(pr>0){const d=Math.round(((c-pr)/pr)*100);v=(d>0?"+":"")+d+"%";}}p.innerText=v;p.style.color=v.includes('-')?'#FF3B30':'#CCFF00';}renderHistory(h);}
-        
-        // --- ОТПРАВКА ДАННЫХ ---
-        function deleteItem(r,b,a){if(!confirm("Удалить?"))return;const row=b.closest('.group')||b.closest('.bento-card');row.style.opacity='0';setTimeout(()=>row.style.display='none',300);fetch(`${GAS_URL}?initData=${initData}&action=${a}&row=${r}`).then(r=>r.json()).then(d=>{if(d.success)fetch(`${GAS_URL}?initData=${initData}`).then(r=>r.json()).then(n=>{globalData=n;})});}
-        function submitRecord(){const n=document.getElementById('rec-name').value,w=document.getElementById('rec-weight').value,r=document.getElementById('rec-reps').value;if(!n)return;closeModal('modal-record');fetch(`${GAS_URL}?initData=${initData}&action=add_record&name=${n}&weight=${w}&reps=${r}`).then(()=>loadData());}
-        function submitWorkout(){const p=document.getElementById('work-prog').value,t=document.getElementById('work-time').value,g=document.getElementById('work-group').value,w=document.getElementById('work-water').value;if(!t)return;closeModal('modal-workout');fetch(`${GAS_URL}?initData=${initData}&action=add_workout&prog=${p}&group=${g}&time=${t}&water=${w}`).then(()=>loadData());}
-        function deleteMacros(){if(!confirm("Удалить?"))return;fetch(`${GAS_URL}?initData=${initData}&action=delete_macros`).then(r=>r.json()).then(d=>{if(d.success){globalData.macros={cals:0};renderMacrosWidget(globalData.macros);tg.HapticFeedback.notificationOccurred('success');}})}
-        function saveMacros(cust=false){if(!currentMacros)return;if(!cust)document.getElementById('btn-save').innerText="...";fetch(`${GAS_URL}?initData=${initData}&action=save_macros&cals=${currentMacros.cals}&prot=${currentMacros.p}&fats=${currentMacros.f}&carbs=${currentMacros.c}`).then(r=>r.json()).then(d=>{if(d.success){if(!cust){document.getElementById('btn-save').innerText="Сохранено!";setTimeout(()=>switchTab('stats'),500);}loadData();}})}
-        function submitCustomMacros(){const cals=document.getElementById('custom-cals').value,p=document.getElementById('custom-prot').value,f=document.getElementById('custom-fats').value,c=document.getElementById('custom-carbs').value;if(!cals)return;closeModal('modal-custom-macros');currentMacros={cals,p,f,c};saveMacros(true);}
-        
-        function calculateMacros(){const w=document.getElementById('c-weight').value,h=document.getElementById('c-height').value,a=document.getElementById('c-age').value,act=document.getElementById('c-activity').value,goal=document.querySelector('input[name="goal"]:checked').value,gen=document.querySelector('input[name="gender"]:checked').value;if(!w||!h||!a){tg.HapticFeedback.notificationOccurred('error');return;}let bmr=(10*w)+(6.25*h)-(5*a)+(gen==='male'?5:-161);let tdee=bmr*act;if(goal==='cut')tdee*=0.85;else if(goal==='bulk')tdee*=1.15;const cals=Math.round(tdee);currentMacros={cals,p:Math.round(cals*0.3/4),f:Math.round(cals*0.25/9),c:Math.round(cals*0.45/4)};document.getElementById('res-total').innerText=cals;document.getElementById('res-p').innerText=currentMacros.p;document.getElementById('res-f').innerText=currentMacros.f;document.getElementById('res-c').innerText=currentMacros.c;document.getElementById('calc-result').classList.remove('hidden');document.getElementById('calc-result').scrollIntoView({behavior:'smooth'});}
-        function switchTab(t){['stats','calc'].forEach(x=>document.getElementById(`tab-${x}`).classList.add('hidden'));document.getElementById(`tab-${t}`).classList.remove('hidden');const c1='#CCFF00',c2='#A1A1AA';const s=document.getElementById('btn-stats'),c=document.getElementById('btn-calc');s.querySelector('svg').style.color=t==='stats'?c1:c2;s.querySelector('span').style.color=t==='stats'?c1:c2;c.querySelector('svg').style.color=t==='calc'?c1:c2;c.querySelector('span').style.color=t==='calc'?c1:c2;}
-        function openModal(id){document.getElementById(id).classList.remove('hidden');} function closeModal(id){document.getElementById(id).classList.add('hidden');}
+        function submitCustomMacros() {
+            const cals = document.getElementById('custom-cals').value;
+            const p = document.getElementById('custom-prot').value;
+            const f = document.getElementById('custom-fats').value;
+            const c = document.getElementById('custom-carbs').value;
+            if(!cals) return;
+            closeModal('modal-custom-macros');
+            currentMacros = { cals, p, f, c };
+            saveMacros(true);
+        }
+
+        function saveMacros(isCustom = false) {
+            if (!currentMacros) return;
+            const userId = tg.initDataUnsafe?.user?.id;
+            if(!isCustom) document.getElementById('btn-save').innerText = "Сохранение...";
+
+            fetch(`${GAS_URL}?id=${userId}&action=save_macros&cals=${currentMacros.cals}&prot=${currentMacros.p}&fats=${currentMacros.f}&carbs=${currentMacros.c}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        if(!isCustom) {
+                            document.getElementById('btn-save').innerText = "Сохранено!";
+                            setTimeout(() => switchTab('stats'), 500);
+                        }
+                        loadData(userId);
+                    }
+                });
+        }
+
+        // --- КАЛЬКУЛЯТОР И ПРОЧЕЕ ---
+        function calculateMacros() {
+            const w = document.getElementById('c-weight').value;
+            const h = document.getElementById('c-height').value;
+            const a = document.getElementById('c-age').value;
+            const act = document.getElementById('c-activity').value;
+            const goal = document.querySelector('input[name="goal"]:checked').value;
+            const gen = document.querySelector('input[name="gender"]:checked').value;
+            
+            if(!w || !h || !a) { tg.HapticFeedback.notificationOccurred('error'); return; }
+            
+            let bmr = (10*w) + (6.25*h) - (5*a) + (gen==='male'?5:-161);
+            let tdee = bmr * act;
+            if(goal==='cut') tdee *= 0.85; else if(goal==='bulk') tdee *= 1.15;
+            
+            const cals = Math.round(tdee);
+            currentMacros = { cals, p: Math.round(cals*0.3/4), f: Math.round(cals*0.25/9), c: Math.round(cals*0.45/4) };
+            
+            document.getElementById('res-total').innerText = cals;
+            document.getElementById('res-p').innerText = currentMacros.p;
+            document.getElementById('res-f').innerText = currentMacros.f;
+            document.getElementById('res-c').innerText = currentMacros.c;
+            document.getElementById('calc-result').classList.remove('hidden');
+            document.getElementById('calc-result').scrollIntoView({behavior:'smooth'});
+        }
+
+        function switchTab(t) {
+            ['stats','calc'].forEach(x => document.getElementById(`tab-${x}`).classList.add('hidden'));
+            document.getElementById(`tab-${t}`).classList.remove('hidden');
+            const c1 = '#CCFF00', c2 = '#A1A1AA';
+            const s = document.getElementById('btn-stats'), c = document.getElementById('btn-calc');
+            s.querySelector('svg').style.color = t==='stats'?c1:c2; s.querySelector('span').style.color = t==='stats'?c1:c2;
+            c.querySelector('svg').style.color = t==='calc'?c1:c2; c.querySelector('span').style.color = t==='calc'?c1:c2;
+        }
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
     </script>
 </body>
 </html>
