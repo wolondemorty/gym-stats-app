@@ -36,11 +36,11 @@
                 <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
             </div>
             <div id="ad-anon" class="hidden w-24 h-24 rounded-full bg-zinc-800 flex items-center justify-center border-2 border-zinc-700">
-                <svg class="w-10 h-10 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                <svg class="w-10 h-10 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
             </div>
         </div>
         <h2 id="ad-name" class="text-xl font-bold mb-2">Доступ ограничен</h2>
-        <p class="text-zinc-500 text-sm mb-6">Нет прав доступа к приложению.<br>Свяжитесь с администратором.</p>
+        <p id="ad-text" class="text-zinc-500 text-sm mb-6">...</p>
         <div class="px-4 py-2 bg-red-500/10 text-red-500 rounded-lg text-xs font-bold uppercase tracking-widest border border-red-500/20">Access Denied</div>
     </div>
 
@@ -222,7 +222,7 @@
             const userId = tg.initDataUnsafe?.user?.id;
             
             if (!userId) {
-                showAccessDenied({ name: 'Доступ ограничен', photo: '' });
+                showAccessDenied({ name: 'Доступ ограничен', photo: '', notTelegram: true });
                 return; 
             }
             
@@ -235,11 +235,6 @@
                 .then(data => {
                     if (data.error === "Access denied") {
                         showAccessDenied(data);
-                        return;
-                    }
-
-                    if (data.error === "User not found") {
-                        showAccessDenied({ name: 'Пользователь не найден', photo: '' });
                         return;
                     }
 
@@ -257,18 +252,26 @@
             document.getElementById('loading').style.display = 'none';
             document.getElementById('access-denied').classList.remove('hidden');
             
-            if(data.photo) {
-                document.getElementById('ad-photo').src = data.photo;
-                document.getElementById('ad-photo').classList.remove('hidden');
-                document.getElementById('ad-lock').classList.remove('hidden');
-                document.getElementById('ad-anon').classList.add('hidden');
+            const photoEl = document.getElementById('ad-photo');
+            const lockEl = document.getElementById('ad-lock');
+            const anonEl = document.getElementById('ad-anon');
+            const textEl = document.getElementById('ad-text');
+            const nameEl = document.getElementById('ad-name');
+
+            if (data.notTelegram) {
+                photoEl.classList.add('hidden');
+                lockEl.classList.add('hidden');
+                anonEl.classList.remove('hidden');
+                nameEl.innerText = "Вход только через Telegram";
+                textEl.innerText = "Пожалуйста, откройте приложение\nчерез бота.";
             } else {
-                document.getElementById('ad-photo').classList.add('hidden');
-                document.getElementById('ad-lock').classList.add('hidden');
-                document.getElementById('ad-anon').classList.remove('hidden');
+                anonEl.classList.add('hidden');
+                photoEl.classList.remove('hidden');
+                lockEl.classList.remove('hidden');
+                if(data.photo) photoEl.src = data.photo;
+                if(data.name) nameEl.innerText = data.name;
+                textEl.innerText = "Нет прав доступа к приложению.\nСвяжитесь с администратором.";
             }
-            
-            if(data.name) document.getElementById('ad-name').innerText = data.name;
         }
 
         function renderEmptyState(msg) {
