@@ -47,106 +47,31 @@
         }
         .arrow-icon { transition: transform 0.4s ease-in-out; }
 
-        /* Styles for SVG Line Chart */
-        .svg-container {
-            width: 100%;
-            height: 100%;
-            overflow: visible;
-        }
-
-        .chart-grid-line {
-            stroke: #333;
-            stroke-width: 1;
-            stroke-dasharray: 4 4;
-            opacity: 0.5;
-        }
-
+        /* SVG Chart Styles */
+        .svg-container { width: 100%; height: 100%; overflow: visible; }
+        .chart-grid-line { stroke: #333; stroke-width: 1; stroke-dasharray: 4 4; opacity: 0.5; }
         .chart-line-path {
-            fill: none;
-            stroke-width: 2.5;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            filter: drop-shadow(0 0 4px rgba(0,0,0,0.5));
-            animation: drawLine 1s ease-out forwards;
-            stroke-dasharray: 1000;
-            stroke-dashoffset: 1000;
+            fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round;
+            filter: drop-shadow(0 0 4px rgba(0,0,0,0.5)); animation: drawLine 1s ease-out forwards;
+            stroke-dasharray: 1000; stroke-dashoffset: 1000;
         }
-
-        .chart-area-path {
-            stroke: none;
-            opacity: 0.3;
-            animation: fadeInArea 1s ease-out forwards;
-        }
-
+        .chart-area-path { stroke: none; opacity: 0.3; animation: fadeInArea 1s ease-out forwards; }
         .chart-point {
-            stroke-width: 2px;
-            stroke: #121212; /* Matches card bg */
-            r: 4;
-            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-            opacity: 0;
+            stroke-width: 2px; stroke: #121212; r: 4;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; opacity: 0;
         }
-
-        .chart-label-val {
-            font-size: 10px;
-            font-weight: 800;
-            fill: #fff;
-            text-anchor: middle;
-            opacity: 0;
-            animation: slideUpFade 0.4s ease-out forwards;
-        }
-
-        .chart-label-date {
-            font-size: 9px;
-            font-weight: 600;
-            fill: #666;
-            text-anchor: middle;
-            opacity: 0;
-            animation: fadeIn 0.4s ease-out forwards;
-        }
-
-        /* Timeline Styles for Workouts */
-        .timeline-scroll {
-            display: flex;
-            overflow-x: auto;
-            gap: 10px;
-            padding-bottom: 10px;
-            padding-top: 5px;
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-        .timeline-scroll::-webkit-scrollbar { display: none; }
-
-        .timeline-card {
-            min-width: 100px;
-            background: #1A1A1A;
-            border: 1px solid #2a2a2a;
-            border-radius: 16px;
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            animation: slideRight 0.4s ease-out backwards;
-        }
+        .chart-label-val { font-size: 10px; font-weight: 800; fill: #fff; text-anchor: middle; opacity: 0; animation: slideUpFade 0.4s ease-out forwards; }
+        .chart-label-date { font-size: 9px; font-weight: 600; fill: #666; text-anchor: middle; opacity: 0; animation: fadeIn 0.4s ease-out forwards; }
         
-        .timeline-connector {
-            position: absolute;
-            top: 50%;
-            right: -10px;
-            width: 10px;
-            height: 2px;
-            background: #333;
-            z-index: 0;
-        }
-        .timeline-card:last-child .timeline-connector { display: none; }
+        /* Donut Chart Specifics */
+        .donut-segment { transform-origin: center; animation: spinSeg 0.8s ease-out forwards; }
+        .legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
 
         @keyframes drawLine { to { stroke-dashoffset: 0; } }
         @keyframes fadeInArea { from { opacity: 0; } to { opacity: 0.25; } }
         @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes slideUpFade { from { transform: translateY(5px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes slideRight { from { transform: translateX(-10px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-
+        @keyframes spinSeg { from { stroke-dasharray: 0 100; } } 
     </style>
 </head>
 <body class="select-none overflow-x-hidden">
@@ -254,7 +179,7 @@
                 <div id="card-workouts" onclick="toggleCard('workouts')" class="bento-card p-4 cursor-pointer group col-span-1 h-fit">
                     <div class="flex justify-between items-start">
                         <div>
-                            <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Тренировки</span>
+                            <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Группы мышц</span>
                             <p id="u-count" class="text-3xl font-black italic tracking-tighter mt-1">0</p>
                         </div>
                         <div class="opacity-30 group-hover:opacity-100 transition-opacity arrow-icon">
@@ -302,7 +227,7 @@
             </div>
             <div id="u-records" class="space-y-3 mb-8"></div>
             <div class="flex items-center justify-between mb-3 px-1">
-                <h2 class="text-xs font-bold text-white uppercase tracking-widest">История</h2>
+                <h2 class="text-xs font-bold text-white uppercase tracking-widest">История (Посл. 5)</h2>
                 <button onclick="openModal('modal-workout')" class="edit-tool bg-zinc-800 text-[#CCFF00] px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase border border-zinc-700">+ Вручную</button>
             </div>
             <div id="u-history" class="space-y-2 pb-4"></div>
@@ -538,7 +463,10 @@
             const container = document.getElementById('u-history');
             if (!list || list.length === 0) { container.innerHTML = '<p class="text-zinc-700 text-xs italic text-center py-4">Нет данных</p>'; return; }
             
-            container.innerHTML = list.map(h => `
+            // Limit to last 5 entries
+            const displayList = list.slice(0, 5);
+
+            container.innerHTML = displayList.map(h => `
                 <div class="flex items-center justify-between py-3 border-b border-zinc-900 last:border-0 group relative">
                     <div>
                         <p class="text-[10px] font-bold text-zinc-500">${h.date}</p>
@@ -622,37 +550,102 @@
             if(!globalData || !globalData.history) return;
             
             let data = (filter === 'all') ? globalData.history : globalData.history.filter(h => h.program === filter);
-            data = data.slice(0, 8).reverse();
-
+            
             if (data.length === 0) {
                 container.innerHTML = '<p class="text-zinc-600 text-xs text-center py-8">Нет данных</p>';
                 return;
             }
 
-            // --- TYPE: WORKOUTS (TIMELINE) ---
+            // --- TYPE: WORKOUTS (DONUT CHART - Muscle Groups) ---
             if (type === 'workouts') {
-                let html = '<div class="timeline-scroll">';
-                data.forEach((d, i) => {
-                    const delay = i * 50;
-                    // Format muscle group text (shorten if needed)
-                    let groupName = d.group || 'N/A';
-                    if (groupName.length > 15) groupName = groupName.substring(0, 14) + '..';
+                // Calculate distribution
+                const distribution = {};
+                let total = 0;
+                
+                // Use all available data for the chart, not just last 5
+                data.forEach(d => {
+                    const group = d.group || 'Другое';
+                    distribution[group] = (distribution[group] || 0) + 1;
+                    total++;
+                });
 
-                    html += `
-                        <div class="timeline-card" style="animation-delay: ${delay}ms;">
-                            <div class="text-[10px] text-zinc-500 font-bold mb-1">${d.date.split('.')[0]}.${d.date.split('.')[1]}</div>
-                            <div class="bg-zinc-800 text-[#CCFF00] border border-zinc-700 px-2 py-1 rounded-md text-[9px] font-black uppercase text-center leading-tight">
-                                ${groupName}
-                            </div>
-                            <div class="timeline-connector"></div>
+                // Convert to array and sort
+                const segments = Object.entries(distribution)
+                    .map(([label, value]) => ({ label, value }))
+                    .sort((a, b) => b.value - a.value);
+
+                // Colors
+                const colors = ['#CCFF00', '#3b82f6', '#f97316', '#ef4444', '#a855f7'];
+
+                let svgContent = '';
+                let legendContent = '';
+                let cumulativePercent = 0;
+
+                // Create SVG segments
+                segments.forEach((seg, i) => {
+                    const percent = seg.value / total;
+                    const startPercent = cumulativePercent;
+                    cumulativePercent += percent;
+                    const color = colors[i % colors.length];
+
+                    // Coordinates
+                    const getCoords = (p) => {
+                        const x = Math.cos(2 * Math.PI * p);
+                        const y = Math.sin(2 * Math.PI * p);
+                        return { x, y };
+                    };
+
+                    const start = getCoords(startPercent);
+                    const end = getCoords(cumulativePercent);
+                    const largeArcFlag = percent > 0.5 ? 1 : 0;
+
+                    const pathData = [
+                        `M ${start.x} ${start.y}`,
+                        `A 1 1 0 ${largeArcFlag} 1 ${end.x} ${end.y}`,
+                        `L 0 0`,
+                    ].join(' ');
+
+                    svgContent += `<path d="${pathData}" fill="${color}" stroke="#121212" stroke-width="0.05" class="donut-segment" style="animation-delay:${i*100}ms"></path>`;
+                    
+                    legendContent += `
+                        <div class="flex items-center justify-between text-[10px] mb-1">
+                            <div class="flex items-center"><span class="legend-dot" style="background:${color}"></span><span class="text-zinc-400 font-bold">${seg.label}</span></div>
+                            <span class="font-bold text-white ml-2">${Math.round(percent*100)}%</span>
                         </div>
                     `;
                 });
-                html += '</div>';
+
+                // If only 1 segment, draw full circle
+                if(segments.length === 1) {
+                     svgContent = `<circle cx="0" cy="0" r="1" fill="${colors[0]}" stroke="#121212" stroke-width="0.05" class="donut-segment"></circle>`;
+                }
+
+                const html = `
+                    <div class="flex items-center justify-between px-4 pt-4 pb-2 h-full">
+                        <div class="w-32 h-32 relative flex-shrink-0">
+                            <svg viewBox="-1 -1 2 2" style="transform: rotate(-90deg);" class="w-full h-full overflow-visible">
+                                ${svgContent}
+                                <circle cx="0" cy="0" r="0.6" fill="#121212"></circle>
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
+                                <span class="text-2xl font-black text-white italic tracking-tighter">${total}</span>
+                                <span class="text-[8px] text-zinc-500 uppercase font-bold">Всего</span>
+                            </div>
+                        </div>
+                        <div class="flex-1 pl-6 h-32 overflow-y-auto no-scrollbar flex flex-col justify-center">
+                            ${legendContent}
+                        </div>
+                    </div>
+                `;
                 container.innerHTML = html;
             } 
             // --- TYPE: WATER & TIME (LINE CHART) ---
             else {
+                // For line charts, use slice to keep readable if too many points, 
+                // but user asked to limit history LIST, not charts. 
+                // However, line charts get messy with 50 points. Let's keep last 8 for visual clarity.
+                const chartData = data.slice(0, 8).reverse();
+
                 let accentColor = '#3b82f6'; 
                 let unit = '';
 
@@ -665,9 +658,8 @@
                 }
 
                 // Process data for SVG
-                const values = data.map(d => type === 'water' ? d.water / 1000 : d.time);
+                const values = chartData.map(d => type === 'water' ? d.water / 1000 : d.time);
                 const maxVal = Math.max(...values, 1) * 1.1; // Add 10% headroom
-                const minVal = 0;
                 
                 // SVG ViewBox
                 const width = 300;
@@ -680,7 +672,7 @@
                 const points = values.map((val, i) => {
                     const x = paddingX + (i / (values.length - 1 || 1)) * usableWidth;
                     const y = height - paddingY - ((val / maxVal) * usableHeight);
-                    return { x, y, val, label: data[i].date.split('.')[0] };
+                    return { x, y, val, label: chartData[i].date.split('.')[0] };
                 });
 
                 // Generate Path D
