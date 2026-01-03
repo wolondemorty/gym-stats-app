@@ -10,7 +10,8 @@
     <style>
         :root { --bg: #050505; --card: #121212; --accent: #CCFF00; --danger: #FF3B30; }
         body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; padding-bottom: 90px; }
-        .bento-card { background: var(--card); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; position: relative; }
+        .bento-card { background: var(--card); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; position: relative; transition: all 0.2s ease; }
+        .bento-card.interactive:active { transform: scale(0.98); border-color: var(--accent); }
         .glass-nav { background: rgba(18,18,18,0.95); backdrop-filter: blur(12px); border-top: 1px solid rgba(255,255,255,0.08); }
         .input-field { background: #1A1A1A; color: white; border: 1px solid #333; outline: none; transition: 0.2s; }
         .input-field:focus { border-color: var(--accent); }
@@ -96,44 +97,36 @@
         </div>
     </div>
 
-    <div id="modal-charts" class="hidden fixed inset-0 z-50 modal-overlay p-4 items-start overflow-y-auto">
-        <div class="bg-[#121212] w-full max-w-sm rounded-3xl p-6 border border-zinc-800 shadow-2xl shadow-black my-8 relative">
+    <div id="modal-charts" class="hidden fixed inset-0 z-50 modal-overlay p-4 items-center justify-center">
+        <div class="bg-[#121212] w-full max-w-sm rounded-3xl p-6 border border-zinc-800 shadow-2xl shadow-black relative">
             <button onclick="closeModal('modal-charts')" class="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
             
             <h3 class="text-2xl font-black italic mb-1 text-white">АНАЛИТИКА</h3>
-            <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-6">Твой прогресс визуально</p>
+            <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-6">Визуализация данных</p>
 
-            <div class="bento-card p-4 mb-4 border-l-2 border-[#CCFF00]">
+            <div id="box-chart-time" class="hidden">
                 <div class="flex justify-between items-center mb-4">
                     <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Динамика (мин)</span>
-                    <span class="text-[9px] text-[#CCFF00] font-bold uppercase tracking-wider">Последние 10</span>
+                    <span class="text-[9px] text-[#CCFF00] font-bold uppercase tracking-wider">Last 10</span>
                 </div>
-                <div class="relative h-40 w-full">
-                    <canvas id="chart-time"></canvas>
-                </div>
+                <div class="relative h-48 w-full"><canvas id="chart-time"></canvas></div>
             </div>
 
-            <div class="bento-card p-4 mb-4">
-                <div class="mb-4">
-                    <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Распределение групп</span>
+            <div id="box-chart-groups" class="hidden">
+                <div class="mb-4 text-center">
+                    <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Распределение нагрузки</span>
                 </div>
-                <div class="relative h-48 w-full flex justify-center">
-                    <canvas id="chart-groups"></canvas>
-                </div>
+                <div class="relative h-56 w-full flex justify-center"><canvas id="chart-groups"></canvas></div>
             </div>
 
-            <div class="bento-card p-4 mb-4 border-l-2 border-blue-500">
+            <div id="box-chart-water" class="hidden">
                 <div class="mb-4">
                     <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Водный баланс (мл)</span>
                 </div>
-                <div class="relative h-32 w-full">
-                    <canvas id="chart-water"></canvas>
-                </div>
+                <div class="relative h-48 w-full"><canvas id="chart-water"></canvas></div>
             </div>
-
-            <button onclick="closeModal('modal-charts')" class="w-full bg-zinc-900 text-zinc-400 py-4 rounded-2xl font-bold text-xs uppercase hover:bg-zinc-800 transition-colors">Закрыть</button>
         </div>
     </div>
 
@@ -158,13 +151,7 @@
             <div id="macros-container" class="mb-4"></div>
             
             <div class="flex justify-between items-center mb-3 px-1">
-                <div class="flex items-center gap-3">
-                    <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Дашборд</p>
-                    <button onclick="openCharts()" class="bg-[#CCFF00]/10 text-[#CCFF00] px-2 py-1 rounded text-[9px] font-bold uppercase border border-[#CCFF00]/20 hover:bg-[#CCFF00]/20 transition-colors flex items-center gap-1">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
-                        Графики
-                    </button>
-                </div>
+                <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Дашборд</p>
                 <div class="relative">
                     <select id="prog-filter" onchange="filterData()" class="bg-[#1A1A1A] text-white border border-zinc-800 rounded-lg text-[10px] font-bold uppercase py-1 px-3 outline-none">
                         <option value="all">Все программы</option>
@@ -173,25 +160,37 @@
             </div>
 
             <div class="grid grid-cols-2 gap-3 mb-3">
-                <div class="bento-card p-4">
+                <div onclick="openChart('time')" class="bento-card interactive p-4 cursor-pointer group">
+                    <div class="absolute top-3 right-3 bg-[#CCFF00]/10 text-[#CCFF00] p-1 rounded-md border border-[#CCFF00]/20 opacity-70 group-hover:opacity-100 transition-opacity">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                    </div>
                     <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Тренировки</span>
                     <p id="u-count" class="text-3xl font-black italic tracking-tighter mt-1">0</p>
                 </div>
-                <div class="bento-card p-4">
+                
+                <div onclick="openChart('water')" class="bento-card interactive p-4 cursor-pointer group border-zinc-800 hover:border-blue-500/50">
+                    <div class="absolute top-3 right-3 bg-blue-500/10 text-blue-400 p-1 rounded-md border border-blue-500/20 opacity-70 group-hover:opacity-100 transition-opacity">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    </div>
                     <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Вода (Л)</span>
                     <p id="u-water" class="text-3xl font-black italic tracking-tighter text-blue-400 mt-1">0</p>
                 </div>
             </div>
-            <div class="bento-card p-4 mb-6 flex justify-between items-center">
+
+            <div onclick="openChart('groups')" class="bento-card interactive p-4 mb-6 flex justify-between items-center cursor-pointer group">
+                <div class="absolute top-3 right-3 bg-zinc-800 text-zinc-400 p-1 rounded-md border border-zinc-700 opacity-50 group-hover:opacity-100 transition-opacity">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
+                </div>
                 <div>
                     <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block mb-1">Прогресс</span>
                     <span id="u-progress" class="text-lg font-bold text-[#CCFF00]">+0%</span>
                 </div>
-                <div class="text-right">
+                <div class="text-right pr-6">
                      <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block mb-1">Ср. время</span>
                     <span id="u-time" class="text-lg font-bold text-white">0 мин</span>
                 </div>
             </div>
+
             <div class="flex items-center justify-between mb-3 px-1">
                 <h2 class="text-xs font-bold text-white uppercase tracking-widest">Рекорды</h2>
                 <button onclick="openModal('modal-record')" class="edit-tool bg-zinc-800 text-[#CCFF00] px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase border border-zinc-700">+ Добавить</button>
@@ -271,12 +270,10 @@
 
         window.onload = () => {
             const userId = tg.initDataUnsafe?.user?.id;
-            
             if (!userId) {
                 showAccessDenied({ name: 'Доступ ограничен', photo: '', notTelegram: true });
                 return; 
             }
-            
             loadData(userId);
         };
 
@@ -284,22 +281,9 @@
             fetch(`${GAS_URL}?id=${userId}`)
                 .then(res => res.json())
                 .then(data => {
-                    if (data.error === "Access denied") {
-                        showAccessDenied(data);
-                        return;
-                    }
-
-                    if (data.error === "User not found") {
-                        showAccessDenied({ name: 'Пользователь не найден', photo: '' });
-                        return;
-                    }
-
-                    if (data.success) {
-                        globalData = data;
-                        renderApp(data);
-                    } else {
-                        renderEmptyState(data.error);
-                    }
+                    if (data.error === "Access denied") { showAccessDenied(data); return; }
+                    if (data.error === "User not found") { showAccessDenied({ name: 'Пользователь не найден', photo: '' }); return; }
+                    if (data.success) { globalData = data; renderApp(data); } else { renderEmptyState(data.error); }
                 })
                 .catch(e => renderEmptyState("Ошибка соединения"));
         }
@@ -307,7 +291,6 @@
         function showAccessDenied(data) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('access-denied').classList.remove('hidden');
-            
             const photoEl = document.getElementById('ad-photo');
             const lockEl = document.getElementById('ad-lock');
             const anonEl = document.getElementById('ad-anon');
@@ -315,15 +298,10 @@
             const nameEl = document.getElementById('ad-name');
 
             if (data.notTelegram) {
-                photoEl.classList.add('hidden');
-                lockEl.classList.add('hidden');
-                anonEl.classList.remove('hidden');
-                nameEl.innerText = "Вход только через Telegram";
-                textEl.innerText = "Пожалуйста, откройте приложение\nчерез нашего бота.";
+                photoEl.classList.add('hidden'); lockEl.classList.add('hidden'); anonEl.classList.remove('hidden');
+                nameEl.innerText = "Вход только через Telegram"; textEl.innerText = "Пожалуйста, откройте приложение\nчерез нашего бота.";
             } else {
-                anonEl.classList.add('hidden');
-                photoEl.classList.remove('hidden');
-                lockEl.classList.remove('hidden');
+                anonEl.classList.add('hidden'); photoEl.classList.remove('hidden'); lockEl.classList.remove('hidden');
                 if(data.photo) photoEl.src = data.photo;
                 if(data.name) nameEl.innerText = data.name;
                 textEl.innerText = "Нет прав доступа к приложению.\nСвяжитесь с администратором.";
@@ -346,32 +324,21 @@
                 document.getElementById('u-photo').classList.remove('hidden');
                 document.getElementById('u-initials').classList.add('hidden');
             }
-
             renderMacrosWidget(data.macros);
             
             const select = document.getElementById('prog-filter');
             select.innerHTML = '';
-            
-            const hasMultiplePrograms = data.programs && data.programs.length > 1;
-            const hasAnyPrograms = data.programs && data.programs.length > 0;
-
-            if (hasMultiplePrograms) {
-                select.innerHTML = '<option value="all">Все программы</option>';
-            } else if (!hasAnyPrograms) {
-                 select.innerHTML = '<option value="all">Нет программ</option>';
-                 select.disabled = true;
-            }
-
-            if (hasAnyPrograms) {
+            const hasPrograms = data.programs && data.programs.length > 0;
+            if (hasPrograms) {
+                if (data.programs.length > 1) select.innerHTML = '<option value="all">Все программы</option>';
                 data.programs.forEach(p => {
                     const opt = document.createElement('option');
-                    opt.value = p;
-                    opt.innerText = p.length > 20 ? p.substring(0,20)+'...' : p;
+                    opt.value = p; opt.innerText = p.length > 20 ? p.substring(0,20)+'...' : p;
                     select.appendChild(opt);
                 });
-                if (!hasMultiplePrograms) {
-                    select.value = data.programs[0];
-                }
+                if (data.programs.length === 1) select.value = data.programs[0];
+            } else {
+                select.innerHTML = '<option value="all">Нет программ</option>'; select.disabled = true;
             }
 
             filterData();
@@ -385,20 +352,15 @@
         function toggleEditMode() {
             isEditMode = !isEditMode;
             document.body.classList.toggle('edit-mode');
-            const btn = document.getElementById('btn-edit');
-            btn.style.color = isEditMode ? '#CCFF00' : '#A1A1AA';
-            if(globalData && globalData.macros) renderMacrosWidget(globalData.macros);
+            document.getElementById('btn-edit').style.color = isEditMode ? '#CCFF00' : '#A1A1AA';
+            if(globalData?.macros) renderMacrosWidget(globalData.macros);
         }
 
-        function applyEditModeState() {
-             if(globalData && globalData.macros) renderMacrosWidget(globalData.macros);
-        }
+        function applyEditModeState() { if(globalData?.macros) renderMacrosWidget(globalData.macros); }
 
         function renderMacrosWidget(macros) {
             const container = document.getElementById('macros-container');
-            const hasMacros = macros && macros.cals > 0;
-
-            if (hasMacros) {
+            if (macros && macros.cals > 0) {
                 container.innerHTML = `
                     <div class="bento-card p-5 relative border-l-4 border-[#CCFF00]">
                         <div class="absolute top-0 right-0 w-24 h-24 bg-[#CCFF00] opacity-[0.03] blur-[40px] rounded-full pointer-events-none"></div>
@@ -417,31 +379,20 @@
                         </div>
                     </div>`;
             } else {
-                container.innerHTML = `
-                    <div onclick="openModal('modal-custom-macros')" class="edit-tool justify-center w-full py-4 border border-dashed border-zinc-800 rounded-2xl text-center text-xs font-bold text-zinc-500 uppercase cursor-pointer hover:border-[#CCFF00] hover:text-[#CCFF00] transition-colors">
-                        + Добавить цель КБЖУ
-                    </div>`;
+                container.innerHTML = `<div onclick="openModal('modal-custom-macros')" class="edit-tool justify-center w-full py-4 border border-dashed border-zinc-800 rounded-2xl text-center text-xs font-bold text-zinc-500 uppercase cursor-pointer hover:border-[#CCFF00] hover:text-[#CCFF00] transition-colors">+ Добавить цель КБЖУ</div>`;
             }
         }
 
         function renderRecords(list) {
             const container = document.getElementById('u-records');
             if (!list || list.length === 0) { container.innerHTML = '<p class="text-zinc-700 text-xs italic text-center py-4">Нет рекордов</p>'; return; }
-            
             container.innerHTML = list.map(r => `
                 <div class="group relative bento-card p-4 mb-3 border-l-4 border-[#CCFF00]">
                     <button onclick="deleteItem(${r.rowIndex}, this, 'delete_record')" class="edit-tool absolute top-2 right-2 w-8 h-8 bg-red-500/10 text-red-500 rounded-lg items-center justify-center hover:bg-red-500 hover:text-white transition-all z-20">✕</button>
-                    
                     <div class="flex justify-between items-start relative z-10">
-                        <div>
-                             <h3 class="text-base font-black uppercase italic text-white leading-tight tracking-wide pr-10">${r.name}</h3>
-                             <p class="text-[10px] text-zinc-500 font-bold mt-1">${r.date}</p>
-                        </div>
+                        <div><h3 class="text-base font-black uppercase italic text-white leading-tight tracking-wide pr-10">${r.name}</h3><p class="text-[10px] text-zinc-500 font-bold mt-1">${r.date}</p></div>
                         <div class="text-right">
-                            <div class="flex items-baseline justify-end gap-1">
-                                <span class="text-2xl font-black italic text-[#CCFF00] tracking-tighter">${r.weight}</span>
-                                <span class="text-[10px] font-bold text-zinc-500 uppercase">КГ</span>
-                            </div>
+                            <div class="flex items-baseline justify-end gap-1"><span class="text-2xl font-black italic text-[#CCFF00] tracking-tighter">${r.weight}</span><span class="text-[10px] font-bold text-zinc-500 uppercase">КГ</span></div>
                             <span class="inline-block bg-zinc-800 text-zinc-300 text-[9px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider mt-1">${r.reps} рп.</span>
                         </div>
                     </div>
@@ -452,17 +403,10 @@
         function renderHistory(list) {
             const container = document.getElementById('u-history');
             if (!list || list.length === 0) { container.innerHTML = '<p class="text-zinc-700 text-xs italic text-center py-4">Нет данных</p>'; return; }
-            
             container.innerHTML = list.map(h => `
                 <div class="flex items-center justify-between py-3 border-b border-zinc-900 last:border-0 group relative">
-                    <div>
-                        <p class="text-[10px] font-bold text-zinc-500">${h.date}</p>
-                        <p class="text-xs font-bold text-white uppercase">${h.group}</p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="bg-zinc-900 text-zinc-400 text-[9px] px-2 py-1 rounded font-bold uppercase">${h.time} мин</span>
-                        <button onclick="deleteItem(${h.rowIndex}, this, 'delete_history')" class="edit-tool text-red-500 w-6 h-6 bg-red-500/10 rounded items-center justify-center">✕</button>
-                    </div>
+                    <div><p class="text-[10px] font-bold text-zinc-500">${h.date}</p><p class="text-xs font-bold text-white uppercase">${h.group}</p></div>
+                    <div class="flex items-center gap-3"><span class="bg-zinc-900 text-zinc-400 text-[9px] px-2 py-1 rounded font-bold uppercase">${h.time} мин</span><button onclick="deleteItem(${h.rowIndex}, this, 'delete_history')" class="edit-tool text-red-500 w-6 h-6 bg-red-500/10 rounded items-center justify-center">✕</button></div>
                 </div>
             `).join('');
         }
@@ -470,270 +414,125 @@
         function filterData() {
             if (!globalData) return;
             const filter = document.getElementById('prog-filter').value;
-            const filteredHistory = (filter === 'all') ? globalData.history : globalData.history.filter(h => h.program === filter);
-
+            const filtered = (filter === 'all') ? globalData.history : globalData.history.filter(h => h.program === filter);
             let totalTime = 0, totalWater = 0;
-            filteredHistory.forEach(h => { totalTime += h.time; totalWater += h.water; });
+            filtered.forEach(h => { totalTime += h.time; totalWater += h.water; });
             
-            document.getElementById('u-count').innerText = filteredHistory.length;
+            document.getElementById('u-count').innerText = filtered.length;
             document.getElementById('u-water').innerText = (totalWater / 1000).toFixed(1);
-            document.getElementById('u-time').innerText = filteredHistory.length > 0 ? Math.round(totalTime / filteredHistory.length) + " мин" : "0 мин";
+            document.getElementById('u-time').innerText = filtered.length > 0 ? Math.round(totalTime / filtered.length) + " мин" : "0 мин";
             
             const progEl = document.getElementById('u-progress');
-            if (filter === 'all') {
-                progEl.innerText = "-";
-                progEl.style.color = "#555";
-            } else {
+            if (filter === 'all') { progEl.innerText = "-"; progEl.style.color = "#555"; } 
+            else {
                 let prog = "0%";
-                if (filteredHistory.length >= 2) {
-                    const cur = filteredHistory[0].time; const prev = filteredHistory[1].time;
+                if (filtered.length >= 2) {
+                    const cur = filtered[0].time; const prev = filtered[1].time;
                     if (prev > 0) { const diff = Math.round(((cur - prev) / prev) * 100); prog = (diff > 0 ? "+" : "") + diff + "%"; }
                 }
-                progEl.innerText = prog;
-                progEl.style.color = prog.includes('-') ? '#FF3B30' : '#CCFF00';
+                progEl.innerText = prog; progEl.style.color = prog.includes('-') ? '#FF3B30' : '#CCFF00';
             }
-
-            renderHistory(filteredHistory);
+            renderHistory(filtered);
         }
-
-        function deleteItem(rowIndex, btn, actionType) {
-            if(!confirm("Удалить запись?")) return;
-            const userId = tg.initDataUnsafe?.user?.id;
-            
-            const row = btn.closest('.group') || btn.closest('.bento-card');
-            row.style.opacity = '0';
-            setTimeout(() => row.style.display = 'none', 300);
-
-            fetch(`${GAS_URL}?id=${userId}&action=${actionType}&row=${rowIndex}`)
-                .then(res => res.json())
-                .then(d => {
-                    if(d.success) {
-                        fetch(`${GAS_URL}?id=${userId}`).then(r => r.json()).then(newdata => { 
-                            globalData = newdata; 
-                        });
-                    }
-                });
-        }
-        
-        function deleteMacros(btn) {
-            if(!confirm("Удалить КБЖУ?")) return;
-            const userId = tg.initDataUnsafe?.user?.id;
-            fetch(`${GAS_URL}?id=${userId}&action=delete_macros`)
-                .then(res => res.json())
-                .then(d => {
-                    if(d.success) {
-                        globalData.macros = {cals:0};
-                        renderMacrosWidget(globalData.macros);
-                        tg.HapticFeedback.notificationOccurred('success');
-                    }
-                });
-        }
-
-        function submitRecord() {
-            const name = document.getElementById('rec-name').value;
-            const weight = document.getElementById('rec-weight').value;
-            const reps = document.getElementById('rec-reps').value;
-            if(!name) return;
-            closeModal('modal-record');
-            const userId = tg.initDataUnsafe?.user?.id;
-            fetch(`${GAS_URL}?id=${userId}&action=add_record&name=${name}&weight=${weight}&reps=${reps}`).then(r => loadData(userId));
-        }
-
-        function submitWorkout() {
-            const prog = document.getElementById('work-prog').value;
-            const time = document.getElementById('work-time').value;
-            if(!time) return;
-            closeModal('modal-workout');
-            const userId = tg.initDataUnsafe?.user?.id;
-            const group = document.getElementById('work-group').value;
-            const water = document.getElementById('work-water').value;
-            fetch(`${GAS_URL}?id=${userId}&action=add_workout&prog=${prog}&group=${group}&time=${time}&water=${water}`).then(r => loadData(userId));
-        }
-        
-        function submitCustomMacros() {
-            const cals = document.getElementById('custom-cals').value;
-            const p = document.getElementById('custom-prot').value;
-            const f = document.getElementById('custom-fats').value;
-            const c = document.getElementById('custom-carbs').value;
-            if(!cals) return;
-            closeModal('modal-custom-macros');
-            currentMacros = { cals, p, f, c };
-            saveMacros(true);
-        }
-
-        function saveMacros(isCustom = false) {
-            if (!currentMacros) return;
-            const userId = tg.initDataUnsafe?.user?.id;
-            if(!isCustom) document.getElementById('btn-save').innerText = "Сохранение...";
-
-            fetch(`${GAS_URL}?id=${userId}&action=save_macros&cals=${currentMacros.cals}&prot=${currentMacros.p}&fats=${currentMacros.f}&carbs=${currentMacros.c}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        if(!isCustom) {
-                            document.getElementById('btn-save').innerText = "Сохранено!";
-                            setTimeout(() => switchTab('stats'), 500);
-                        }
-                        loadData(userId);
-                    }
-                });
-        }
-
-        function calculateMacros() {
-            const w = document.getElementById('c-weight').value;
-            const h = document.getElementById('c-height').value;
-            const a = document.getElementById('c-age').value;
-            const act = document.getElementById('c-activity').value;
-            const goal = document.querySelector('input[name="goal"]:checked').value;
-            const gen = document.querySelector('input[name="gender"]:checked').value;
-            
-            if(!w || !h || !a) { tg.HapticFeedback.notificationOccurred('error'); return; }
-            
-            let bmr = (10*w) + (6.25*h) - (5*a) + (gen==='male'?5:-161);
-            let tdee = bmr * act;
-            if(goal==='cut') tdee *= 0.85; else if(goal==='bulk') tdee *= 1.15;
-            
-            const cals = Math.round(tdee);
-            currentMacros = { cals, p: Math.round(cals*0.3/4), f: Math.round(cals*0.25/9), c: Math.round(cals*0.45/4) };
-            
-            document.getElementById('res-total').innerText = cals;
-            document.getElementById('res-p').innerText = currentMacros.p;
-            document.getElementById('res-f').innerText = currentMacros.f;
-            document.getElementById('res-c').innerText = currentMacros.c;
-            document.getElementById('calc-result').classList.remove('hidden');
-            document.getElementById('calc-result').scrollIntoView({behavior:'smooth'});
-        }
-
-        function switchTab(t) {
-            ['stats','calc'].forEach(x => document.getElementById(`tab-${x}`).classList.add('hidden'));
-            document.getElementById(`tab-${t}`).classList.remove('hidden');
-            const c1 = '#CCFF00', c2 = '#A1A1AA';
-            const s = document.getElementById('btn-stats'), c = document.getElementById('btn-calc');
-            s.querySelector('svg').style.color = t==='stats'?c1:c2; s.querySelector('span').style.color = t==='stats'?c1:c2;
-            c.querySelector('svg').style.color = t==='calc'?c1:c2; c.querySelector('span').style.color = t==='calc'?c1:c2;
-        }
-
-        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
         // --- ЛОГИКА ГРАФИКОВ ---
-        function openCharts() {
+        function openChart(type) {
+            ['time', 'groups', 'water'].forEach(t => document.getElementById(`box-chart-${t}`).classList.add('hidden'));
+            document.getElementById(`box-chart-${type}`).classList.remove('hidden');
             openModal('modal-charts');
             setTimeout(renderCharts, 100);
         }
 
         function renderCharts() {
             if (!globalData || !globalData.history) return;
-
-            const recentHistory = globalData.history.slice(0, 10).reverse();
-            
-            const labels = recentHistory.map(h => h.date.split('.')[0]); 
-            const timeData = recentHistory.map(h => h.time);
-            const waterData = recentHistory.map(h => h.water);
+            const recent = globalData.history.slice(0, 10).reverse();
+            const labels = recent.map(h => h.date.split('.')[0]); 
+            const timeData = recent.map(h => h.time);
+            const waterData = recent.map(h => h.water);
 
             const groupsCount = {};
-            globalData.history.forEach(h => {
-                groupsCount[h.group] = (groupsCount[h.group] || 0) + 1;
-            });
-            const groupLabels = Object.keys(groupsCount);
-            const groupValues = Object.values(groupsCount);
-
-            Chart.defaults.color = '#71717a';
-            Chart.defaults.font.family = 'Inter';
+            globalData.history.forEach(h => { groupsCount[h.group] = (groupsCount[h.group] || 0) + 1; });
             
-            // 1. График Времени
+            Chart.defaults.color = '#71717a'; Chart.defaults.font.family = 'Inter';
+            
+            // 1. Time Chart
             destroyChart('chart-time');
             const ctxTime = document.getElementById('chart-time').getContext('2d');
-            
             let gradientTime = ctxTime.createLinearGradient(0, 0, 0, 400);
-            gradientTime.addColorStop(0, 'rgba(204, 255, 0, 0.5)'); 
-            gradientTime.addColorStop(1, 'rgba(204, 255, 0, 0)');
+            gradientTime.addColorStop(0, 'rgba(204, 255, 0, 0.5)'); gradientTime.addColorStop(1, 'rgba(204, 255, 0, 0)');
 
             chartsInstances['chart-time'] = new Chart(ctxTime, {
                 type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Минуты',
-                        data: timeData,
-                        borderColor: '#CCFF00',
-                        backgroundColor: gradientTime,
-                        borderWidth: 2,
-                        pointBackgroundColor: '#121212',
-                        pointBorderColor: '#CCFF00',
-                        pointRadius: 4,
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { grid: { display: false, drawBorder: false } },
-                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
-                    }
-                }
+                data: { labels: labels, datasets: [{ label: 'Минуты', data: timeData, borderColor: '#CCFF00', backgroundColor: gradientTime, borderWidth: 2, pointBackgroundColor: '#121212', pointBorderColor: '#CCFF00', pointRadius: 4, fill: true, tension: 0.4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false, drawBorder: false } }, y: { grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true } } }
             });
 
-            // 2. График Групп
+            // 2. Groups Chart
             destroyChart('chart-groups');
             chartsInstances['chart-groups'] = new Chart(document.getElementById('chart-groups'), {
                 type: 'doughnut',
-                data: {
-                    labels: groupLabels,
-                    datasets: [{
-                        data: groupValues,
-                        backgroundColor: ['#CCFF00', '#FFFFFF', '#3F3F46', '#71717A', '#27272A'],
-                        borderWidth: 0,
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { 
-                            position: 'right',
-                            labels: { boxWidth: 10, font: { size: 10, weight: 'bold' }, color: '#fff' }
-                        }
-                    },
-                    cutout: '70%'
-                }
+                data: { labels: Object.keys(groupsCount), datasets: [{ data: Object.values(groupsCount), backgroundColor: ['#CCFF00', '#FFFFFF', '#3F3F46', '#71717A', '#27272A'], borderWidth: 0, hoverOffset: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10, weight: 'bold' }, color: '#fff' } } }, cutout: '70%' }
             });
 
-            // 3. График Воды
+            // 3. Water Chart
             destroyChart('chart-water');
             chartsInstances['chart-water'] = new Chart(document.getElementById('chart-water'), {
                 type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Мл',
-                        data: waterData,
-                        backgroundColor: '#60A5FA',
-                        borderRadius: 4,
-                        barThickness: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { grid: { display: false } },
-                        y: { display: false }
-                    }
-                }
+                data: { labels: labels, datasets: [{ label: 'Мл', data: waterData, backgroundColor: '#60A5FA', borderRadius: 4, barThickness: 12 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { display: false } } }
             });
         }
 
-        function destroyChart(id) {
-            if (chartsInstances[id]) {
-                chartsInstances[id].destroy();
-            }
+        function destroyChart(id) { if (chartsInstances[id]) chartsInstances[id].destroy(); }
+
+        // --- ОСТАЛЬНЫЕ ФУНКЦИИ (Удаление, Сабмит и т.д.) ---
+        function deleteItem(rowIndex, btn, actionType) {
+            if(!confirm("Удалить запись?")) return;
+            const userId = tg.initDataUnsafe?.user?.id;
+            const row = btn.closest('.group') || btn.closest('.bento-card');
+            row.style.opacity = '0'; setTimeout(() => row.style.display = 'none', 300);
+            fetch(`${GAS_URL}?id=${userId}&action=${actionType}&row=${rowIndex}`).then(res => res.json()).then(d => { if(d.success) fetch(`${GAS_URL}?id=${userId}`).then(r => r.json()).then(newdata => { globalData = newdata; }); });
         }
+        function deleteMacros(btn) {
+            if(!confirm("Удалить КБЖУ?")) return;
+            const userId = tg.initDataUnsafe?.user?.id;
+            fetch(`${GAS_URL}?id=${userId}&action=delete_macros`).then(res => res.json()).then(d => { if(d.success) { globalData.macros = {cals:0}; renderMacrosWidget(globalData.macros); tg.HapticFeedback.notificationOccurred('success'); } });
+        }
+        function submitRecord() {
+            const name = document.getElementById('rec-name').value; const weight = document.getElementById('rec-weight').value; const reps = document.getElementById('rec-reps').value;
+            if(!name) return; closeModal('modal-record');
+            fetch(`${GAS_URL}?id=${tg.initDataUnsafe?.user?.id}&action=add_record&name=${name}&weight=${weight}&reps=${reps}`).then(r => loadData(tg.initDataUnsafe?.user?.id));
+        }
+        function submitWorkout() {
+            const prog = document.getElementById('work-prog').value; const time = document.getElementById('work-time').value;
+            if(!time) return; closeModal('modal-workout');
+            fetch(`${GAS_URL}?id=${tg.initDataUnsafe?.user?.id}&action=add_workout&prog=${prog}&group=${document.getElementById('work-group').value}&time=${time}&water=${document.getElementById('work-water').value}`).then(r => loadData(tg.initDataUnsafe?.user?.id));
+        }
+        function submitCustomMacros() {
+            const cals = document.getElementById('custom-cals').value; if(!cals) return; closeModal('modal-custom-macros');
+            currentMacros = { cals, p: document.getElementById('custom-prot').value, f: document.getElementById('custom-fats').value, c: document.getElementById('custom-carbs').value }; saveMacros(true);
+        }
+        function saveMacros(isCustom = false) {
+            if (!currentMacros) return; const userId = tg.initDataUnsafe?.user?.id; if(!isCustom) document.getElementById('btn-save').innerText = "Сохранение...";
+            fetch(`${GAS_URL}?id=${userId}&action=save_macros&cals=${currentMacros.cals}&prot=${currentMacros.p}&fats=${currentMacros.f}&carbs=${currentMacros.c}`).then(res => res.json()).then(data => { if (data.success) { if(!isCustom) { document.getElementById('btn-save').innerText = "Сохранено!"; setTimeout(() => switchTab('stats'), 500); } loadData(userId); } });
+        }
+        function calculateMacros() {
+            const w = document.getElementById('c-weight').value; const h = document.getElementById('c-height').value; const a = document.getElementById('c-age').value;
+            if(!w || !h || !a) { tg.HapticFeedback.notificationOccurred('error'); return; }
+            let tdee = ((10*w) + (6.25*h) - (5*a) + (document.querySelector('input[name="gender"]:checked').value==='male'?5:-161)) * document.getElementById('c-activity').value;
+            const goal = document.querySelector('input[name="goal"]:checked').value; if(goal==='cut') tdee *= 0.85; else if(goal==='bulk') tdee *= 1.15;
+            const cals = Math.round(tdee); currentMacros = { cals, p: Math.round(cals*0.3/4), f: Math.round(cals*0.25/9), c: Math.round(cals*0.45/4) };
+            document.getElementById('res-total').innerText = cals; document.getElementById('res-p').innerText = currentMacros.p; document.getElementById('res-f').innerText = currentMacros.f; document.getElementById('res-c').innerText = currentMacros.c;
+            document.getElementById('calc-result').classList.remove('hidden'); document.getElementById('calc-result').scrollIntoView({behavior:'smooth'});
+        }
+        function switchTab(t) {
+            ['stats','calc'].forEach(x => document.getElementById(`tab-${x}`).classList.add('hidden')); document.getElementById(`tab-${t}`).classList.remove('hidden');
+            const c1 = '#CCFF00', c2 = '#A1A1AA'; const s = document.getElementById('btn-stats'), c = document.getElementById('btn-calc');
+            s.querySelector('svg').style.color = t==='stats'?c1:c2; s.querySelector('span').style.color = t==='stats'?c1:c2; c.querySelector('svg').style.color = t==='calc'?c1:c2; c.querySelector('span').style.color = t==='calc'?c1:c2;
+        }
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
     </script>
 </body>
 </html>
