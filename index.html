@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #050505; --card: #121212; --accent: #CCFF00; --danger: #FF3B30; }
@@ -95,6 +96,47 @@
         </div>
     </div>
 
+    <div id="modal-charts" class="hidden fixed inset-0 z-50 modal-overlay p-4 items-start overflow-y-auto">
+        <div class="bg-[#121212] w-full max-w-sm rounded-3xl p-6 border border-zinc-800 shadow-2xl shadow-black my-8 relative">
+            <button onclick="closeModal('modal-charts')" class="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            
+            <h3 class="text-2xl font-black italic mb-1 text-white">АНАЛИТИКА</h3>
+            <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-6">Твой прогресс визуально</p>
+
+            <div class="bento-card p-4 mb-4 border-l-2 border-[#CCFF00]">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Динамика (мин)</span>
+                    <span class="text-[9px] text-[#CCFF00] font-bold uppercase tracking-wider">Последние 10</span>
+                </div>
+                <div class="relative h-40 w-full">
+                    <canvas id="chart-time"></canvas>
+                </div>
+            </div>
+
+            <div class="bento-card p-4 mb-4">
+                <div class="mb-4">
+                    <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Распределение групп</span>
+                </div>
+                <div class="relative h-48 w-full flex justify-center">
+                    <canvas id="chart-groups"></canvas>
+                </div>
+            </div>
+
+            <div class="bento-card p-4 mb-4 border-l-2 border-blue-500">
+                <div class="mb-4">
+                    <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Водный баланс (мл)</span>
+                </div>
+                <div class="relative h-32 w-full">
+                    <canvas id="chart-water"></canvas>
+                </div>
+            </div>
+
+            <button onclick="closeModal('modal-charts')" class="w-full bg-zinc-900 text-zinc-400 py-4 rounded-2xl font-bold text-xs uppercase hover:bg-zinc-800 transition-colors">Закрыть</button>
+        </div>
+    </div>
+
     <div id="app-container" class="hidden opacity-0 transition-opacity duration-500">
         <header class="px-6 pt-6 pb-2 flex justify-between items-center">
             <div class="flex items-center gap-3">
@@ -114,14 +156,22 @@
 
         <section id="tab-stats" class="px-5 pt-4 fade-in">
             <div id="macros-container" class="mb-4"></div>
+            
             <div class="flex justify-between items-center mb-3 px-1">
-                <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Дашборд</p>
+                <div class="flex items-center gap-3">
+                    <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Дашборд</p>
+                    <button onclick="openCharts()" class="bg-[#CCFF00]/10 text-[#CCFF00] px-2 py-1 rounded text-[9px] font-bold uppercase border border-[#CCFF00]/20 hover:bg-[#CCFF00]/20 transition-colors flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                        Графики
+                    </button>
+                </div>
                 <div class="relative">
                     <select id="prog-filter" onchange="filterData()" class="bg-[#1A1A1A] text-white border border-zinc-800 rounded-lg text-[10px] font-bold uppercase py-1 px-3 outline-none">
                         <option value="all">Все программы</option>
                     </select>
                 </div>
             </div>
+
             <div class="grid grid-cols-2 gap-3 mb-3">
                 <div class="bento-card p-4">
                     <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Тренировки</span>
@@ -217,6 +267,7 @@
         let globalData = null;
         let isEditMode = false;
         let currentMacros = null;
+        let chartsInstances = {};
 
         window.onload = () => {
             const userId = tg.initDataUnsafe?.user?.id;
@@ -561,8 +612,128 @@
             s.querySelector('svg').style.color = t==='stats'?c1:c2; s.querySelector('span').style.color = t==='stats'?c1:c2;
             c.querySelector('svg').style.color = t==='calc'?c1:c2; c.querySelector('span').style.color = t==='calc'?c1:c2;
         }
+
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        // --- ЛОГИКА ГРАФИКОВ ---
+        function openCharts() {
+            openModal('modal-charts');
+            setTimeout(renderCharts, 100);
+        }
+
+        function renderCharts() {
+            if (!globalData || !globalData.history) return;
+
+            const recentHistory = globalData.history.slice(0, 10).reverse();
+            
+            const labels = recentHistory.map(h => h.date.split('.')[0]); 
+            const timeData = recentHistory.map(h => h.time);
+            const waterData = recentHistory.map(h => h.water);
+
+            const groupsCount = {};
+            globalData.history.forEach(h => {
+                groupsCount[h.group] = (groupsCount[h.group] || 0) + 1;
+            });
+            const groupLabels = Object.keys(groupsCount);
+            const groupValues = Object.values(groupsCount);
+
+            Chart.defaults.color = '#71717a';
+            Chart.defaults.font.family = 'Inter';
+            
+            // 1. График Времени
+            destroyChart('chart-time');
+            const ctxTime = document.getElementById('chart-time').getContext('2d');
+            
+            let gradientTime = ctxTime.createLinearGradient(0, 0, 0, 400);
+            gradientTime.addColorStop(0, 'rgba(204, 255, 0, 0.5)'); 
+            gradientTime.addColorStop(1, 'rgba(204, 255, 0, 0)');
+
+            chartsInstances['chart-time'] = new Chart(ctxTime, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Минуты',
+                        data: timeData,
+                        borderColor: '#CCFF00',
+                        backgroundColor: gradientTime,
+                        borderWidth: 2,
+                        pointBackgroundColor: '#121212',
+                        pointBorderColor: '#CCFF00',
+                        pointRadius: 4,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false, drawBorder: false } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
+                    }
+                }
+            });
+
+            // 2. График Групп
+            destroyChart('chart-groups');
+            chartsInstances['chart-groups'] = new Chart(document.getElementById('chart-groups'), {
+                type: 'doughnut',
+                data: {
+                    labels: groupLabels,
+                    datasets: [{
+                        data: groupValues,
+                        backgroundColor: ['#CCFF00', '#FFFFFF', '#3F3F46', '#71717A', '#27272A'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            position: 'right',
+                            labels: { boxWidth: 10, font: { size: 10, weight: 'bold' }, color: '#fff' }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+
+            // 3. График Воды
+            destroyChart('chart-water');
+            chartsInstances['chart-water'] = new Chart(document.getElementById('chart-water'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Мл',
+                        data: waterData,
+                        backgroundColor: '#60A5FA',
+                        borderRadius: 4,
+                        barThickness: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { display: false }
+                    }
+                }
+            });
+        }
+
+        function destroyChart(id) {
+            if (chartsInstances[id]) {
+                chartsInstances[id].destroy();
+            }
+        }
     </script>
 </body>
 </html>
