@@ -16,11 +16,10 @@
             border-radius: 24px; 
             position: relative; 
             overflow: hidden; 
-            /* Очень плавный переход для размеров и позиции */
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            will-change: grid-column, height, transform; 
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            will-change: grid-column, transform, height; 
         }
-        .bento-card:active { transform: scale(0.99); transition-duration: 0.2s; }
+        .bento-card:active { transform: scale(0.99); transition-duration: 0.1s; }
         
         .glass-nav { background: rgba(18,18,18,0.95); backdrop-filter: blur(12px); border-top: 1px solid rgba(255,255,255,0.08); }
         .input-field { background: #1A1A1A; color: white; border: 1px solid #333; outline: none; transition: 0.2s; }
@@ -33,21 +32,20 @@
         .fade-in { animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* Плавное раскрытие графика */
         .chart-wrapper { 
             max-height: 0; 
             opacity: 0; 
+            margin-top: 0;
             overflow: hidden;
-            /* Используем ease-in-out для мягкости */
-            transition: max-height 0.5s ease-in-out, opacity 0.4s ease-in-out; 
+            transition: max-height 0.4s ease-in-out, opacity 0.4s ease-in-out, margin-top 0.4s ease-in-out; 
         }
         .chart-wrapper.open { 
-            max-height: 280px; /* Чуть больше места */
+            max-height: 250px; 
             opacity: 1; 
             margin-top: 20px; 
-            padding-bottom: 8px;
+            padding-bottom: 5px;
         }
-        .arrow-icon { transition: transform 0.5s ease-in-out; }
+        .arrow-icon { transition: transform 0.4s ease-in-out; }
     </style>
 </head>
 <body class="select-none overflow-x-hidden">
@@ -516,7 +514,6 @@
                     if(arrow) arrow.style.transform = 'rotate(180deg)';
                 }
             }
-            tg.HapticFeedback.selectionChanged();
         }
 
         function renderInlineChart(type, container) {
@@ -524,38 +521,8 @@
             if(!globalData || !globalData.history) return;
             
             let data = (filter === 'all') ? globalData.history : globalData.history.filter(h => h.program === filter);
-            
-            if (type === 'workouts') {
-                 // Logic for last 7 days circles
-                 const days = [];
-                 for(let i=6; i>=0; i--) {
-                     const d = new Date();
-                     d.setDate(d.getDate() - i);
-                     days.push(d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }));
-                 }
-
-                 let html = '<div class="h-40 flex items-center justify-between px-4 py-8 bg-white/5 rounded-2xl border border-white/5 mt-4">';
-                 days.forEach(dayStr => {
-                     const trained = data.some(d => d.date.startsWith(dayStr));
-                     const bgColor = trained ? 'bg-[#CCFF00] shadow-[0_0_10px_rgba(204,255,0,0.3)] scale-110' : 'bg-zinc-800/50';
-                     const textColor = trained ? 'text-black' : 'text-zinc-500 hidden';
-
-                     html += `
-                        <div class="flex flex-col items-center gap-3 group">
-                            <div class="w-9 h-9 ${bgColor} rounded-full flex items-center justify-center transition-all duration-500">
-                                <svg class="w-5 h-5 ${textColor}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                            </div>
-                             <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">${dayStr}</span>
-                        </div>
-                    `;
-                 });
-                 html += '</div>';
-                 container.innerHTML = html;
-                 return;
-            }
-
-            // Bar chart logic for Water and Time
             data = data.slice(0, 7).reverse();
+
             if (data.length === 0) {
                 container.innerHTML = '<p class="text-zinc-600 text-xs text-center py-8">Нет данных</p>';
                 return;
@@ -565,7 +532,10 @@
             let chartGradient = 'from-[#CCFF00] to-transparent';
             let unit = '';
             
-            if (type === 'water') {
+            if (type === 'workouts') {
+                maxValue = 1.5; 
+                data = data.map(d => ({ val: 1, label: d.date.split('.')[0] }));
+            } else if (type === 'water') {
                 chartGradient = 'from-blue-500 to-blue-900/10';
                 unit = ' мл';
                 data = data.map(d => ({ val: d.water, label: d.date.split('.')[0] }));
@@ -576,7 +546,6 @@
                 maxValue = Math.max(...data.map(d => d.val)) * 1.2;
             }
 
-            // Increased gap (gap-4) and rounded bars (rounded-t-2xl)
             let html = '<div class="h-40 bg-white/5 rounded-2xl flex items-end justify-between gap-4 mt-4 px-4 pb-3 pt-6 border border-white/5">';
             data.forEach((d, i) => {
                 const heightPct = maxValue > 0 ? (d.val / maxValue) * 100 : 0;
@@ -619,7 +588,6 @@
                     if(d.success) {
                         globalData.macros = {cals:0};
                         renderMacrosWidget(globalData.macros);
-                        tg.HapticFeedback.notificationOccurred('success');
                     }
                 });
         }
@@ -680,7 +648,7 @@
             const act = document.getElementById('c-activity').value;
             const goal = document.querySelector('input[name="goal"]:checked').value;
             const gen = document.querySelector('input[name="gender"]:checked').value;
-            if(!w || !h || !a) { tg.HapticFeedback.notificationOccurred('error'); return; }
+            if(!w || !h || !a) { return; }
             let bmr = (10*w) + (6.25*h) - (5*a) + (gen==='male'?5:-161);
             let tdee = bmr * act;
             if(goal==='cut') tdee *= 0.85; else if(goal==='bulk') tdee *= 1.15;
