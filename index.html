@@ -16,10 +16,11 @@
             border-radius: 24px; 
             position: relative; 
             overflow: hidden; 
-            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-            will-change: grid-column, transform, height; 
+            /* Очень плавный переход для размеров и позиции */
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: grid-column, height, transform; 
         }
-        .bento-card:active { transform: scale(0.99); }
+        .bento-card:active { transform: scale(0.99); transition-duration: 0.2s; }
         
         .glass-nav { background: rgba(18,18,18,0.95); backdrop-filter: blur(12px); border-top: 1px solid rgba(255,255,255,0.08); }
         .input-field { background: #1A1A1A; color: white; border: 1px solid #333; outline: none; transition: 0.2s; }
@@ -29,22 +30,24 @@
         .modal-overlay { background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; }
         .loader { width: 20px; height: 20px; border: 2px solid #333; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .fade-in { animation: fadeIn 0.3s ease-out; }
+        .fade-in { animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
+        /* Плавное раскрытие графика */
         .chart-wrapper { 
             max-height: 0; 
             opacity: 0; 
-            overflow: hidden; 
-            transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-in; 
+            overflow: hidden;
+            /* Используем ease-in-out для мягкости */
+            transition: max-height 0.5s ease-in-out, opacity 0.4s ease-in-out; 
         }
         .chart-wrapper.open { 
-            max-height: 250px; 
+            max-height: 280px; /* Чуть больше места */
             opacity: 1; 
             margin-top: 20px; 
             padding-bottom: 8px;
         }
-        .arrow-icon { transition: transform 0.4s ease; }
+        .arrow-icon { transition: transform 0.5s ease-in-out; }
     </style>
 </head>
 <body class="select-none overflow-x-hidden">
@@ -185,7 +188,7 @@
                         <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider mb-1">Прогресс</span>
                         <span id="u-progress" class="text-2xl font-black italic text-[#CCFF00] tracking-tight">+0%</span>
                     </div>
-                    <div class="h-8 w-[1px] bg-zinc-800 mx-2"></div>
+                    <div class="h-10 w-[1px] bg-zinc-800 mx-2 self-center"></div>
                     <div class="flex flex-col items-end">
                          <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider mb-1">Ср. время</span>
                         <span id="u-time" class="text-2xl font-black italic text-white tracking-tight">0 мин</span>
@@ -521,8 +524,38 @@
             if(!globalData || !globalData.history) return;
             
             let data = (filter === 'all') ? globalData.history : globalData.history.filter(h => h.program === filter);
-            data = data.slice(0, 7).reverse();
+            
+            if (type === 'workouts') {
+                 // Logic for last 7 days circles
+                 const days = [];
+                 for(let i=6; i>=0; i--) {
+                     const d = new Date();
+                     d.setDate(d.getDate() - i);
+                     days.push(d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }));
+                 }
 
+                 let html = '<div class="h-40 flex items-center justify-between px-4 py-8 bg-white/5 rounded-2xl border border-white/5 mt-4">';
+                 days.forEach(dayStr => {
+                     const trained = data.some(d => d.date.startsWith(dayStr));
+                     const bgColor = trained ? 'bg-[#CCFF00] shadow-[0_0_10px_rgba(204,255,0,0.3)] scale-110' : 'bg-zinc-800/50';
+                     const textColor = trained ? 'text-black' : 'text-zinc-500 hidden';
+
+                     html += `
+                        <div class="flex flex-col items-center gap-3 group">
+                            <div class="w-9 h-9 ${bgColor} rounded-full flex items-center justify-center transition-all duration-500">
+                                <svg class="w-5 h-5 ${textColor}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                            </div>
+                             <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">${dayStr}</span>
+                        </div>
+                    `;
+                 });
+                 html += '</div>';
+                 container.innerHTML = html;
+                 return;
+            }
+
+            // Bar chart logic for Water and Time
+            data = data.slice(0, 7).reverse();
             if (data.length === 0) {
                 container.innerHTML = '<p class="text-zinc-600 text-xs text-center py-8">Нет данных</p>';
                 return;
@@ -532,10 +565,7 @@
             let chartGradient = 'from-[#CCFF00] to-transparent';
             let unit = '';
             
-            if (type === 'workouts') {
-                maxValue = 1.5; 
-                data = data.map(d => ({ val: 1, label: d.date.split('.')[0] }));
-            } else if (type === 'water') {
+            if (type === 'water') {
                 chartGradient = 'from-blue-500 to-blue-900/10';
                 unit = ' мл';
                 data = data.map(d => ({ val: d.water, label: d.date.split('.')[0] }));
@@ -546,25 +576,24 @@
                 maxValue = Math.max(...data.map(d => d.val)) * 1.2;
             }
 
-            let html = '<div class="h-40 bg-white/5 rounded-xl flex items-end justify-between gap-2 mt-2 px-3 pb-2 pt-6 border border-white/5">';
+            // Increased gap (gap-4) and rounded bars (rounded-t-2xl)
+            let html = '<div class="h-40 bg-white/5 rounded-2xl flex items-end justify-between gap-4 mt-4 px-4 pb-3 pt-6 border border-white/5">';
             data.forEach((d, i) => {
                 const heightPct = maxValue > 0 ? (d.val / maxValue) * 100 : 0;
                 const displayVal = d.val > 0 ? d.val : '';
-                // Staggered animation for bars
                 const animDelay = i * 50; 
                 
                 html += `
                     <div class="flex flex-col items-center justify-end h-full w-full group">
                          <span class="mb-2 text-[10px] font-black text-white tracking-tighter ${displayVal ? '' : 'opacity-0'} transition-all group-hover:scale-110">${displayVal}</span>
-                         <div class="w-full bg-zinc-800/50 rounded-t-md relative overflow-hidden h-full flex items-end">
-                            <div class="w-full bg-gradient-to-t ${chartGradient} rounded-t-md opacity-90 hover:opacity-100 transition-all duration-700 ease-out" style="height: ${heightPct}%; animation: growUp 0.6s ease-out ${animDelay}ms backwards;"></div>
+                         <div class="w-full bg-zinc-800/50 rounded-t-2xl relative overflow-hidden h-full flex items-end">
+                            <div class="w-full bg-gradient-to-t ${chartGradient} rounded-t-2xl opacity-90 hover:opacity-100 transition-all duration-700 ease-out" style="height: ${heightPct}%; animation: growUp 0.6s ease-out ${animDelay}ms backwards;"></div>
                          </div>
                          <span class="mt-2 text-[8px] text-zinc-500 font-bold uppercase tracking-wider">${d.label}</span>
                     </div>
                 `;
             });
-            html += `</div>
-            <style>@keyframes growUp { from { height: 0; opacity: 0; } to { opacity: 0.9; } }</style>`;
+            html += `</div><style>@keyframes growUp { from { height: 0; opacity: 0; } to { opacity: 0.9; } }</style>`;
             container.innerHTML = html;
         }
 
