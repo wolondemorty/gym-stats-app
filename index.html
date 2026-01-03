@@ -47,56 +47,105 @@
         }
         .arrow-icon { transition: transform 0.4s ease-in-out; }
 
-        .chart-grid-line {
-            position: absolute;
-            left: 0;
-            right: 0;
-            border-top: 1px dashed rgba(255, 255, 255, 0.05);
-            pointer-events: none;
+        .svg-chart-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
         }
         
-        .bar-fill {
-            width: 100%;
-            border-radius: 6px 6px 0 0;
-            position: relative;
-            transform-origin: bottom;
-            will-change: transform;
-            transition: all 0.3s ease;
+        .chart-line-path {
+            fill: none;
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            animation: dash 1s ease-out forwards;
+        }
+        
+        .chart-area-path {
+            stroke: none;
+            opacity: 0.2;
+            animation: fadeInArea 1s ease-out forwards;
         }
 
-        .chart-tooltip {
-            position: absolute;
-            top: -35px;
-            left: 50%;
-            transform: translateX(-50%) translateY(10px);
-            background: rgba(20, 20, 20, 0.95);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 4px 8px;
-            border-radius: 8px;
+        .chart-dot {
+            r: 4;
+            stroke-width: 2;
+            stroke: #121212;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            opacity: 0; 
+        }
+
+        .chart-label {
             font-size: 10px;
             font-weight: 700;
-            color: #fff;
-            white-space: nowrap;
+            fill: #fff;
+            text-anchor: middle;
             opacity: 0;
-            pointer-events: none;
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 10;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            animation: fadeInLabel 0.4s ease-out forwards;
+        }
+        
+        .timeline-container {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            height: 100%;
+            width: 100%;
+            padding-top: 20px;
+            overflow-x: auto;
+            gap: 8px;
+        }
+        
+        .timeline-item {
+            flex: 1;
+            display: flex;
+            flex-col: column;
+            align-items: center;
+            justify-content: flex-end;
+            position: relative;
+            min-width: 40px;
         }
 
-        .group:hover .chart-tooltip {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
+        .timeline-line {
+            width: 1px;
+            background: linear-gradient(to top, #333 0%, #333 50%, rgba(255,255,255,0.2) 100%);
+            height: 60px;
+            margin-bottom: 8px;
+            position: relative;
+        }
+        
+        .timeline-badge {
+            background: #1A1A1A;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #CCFF00;
+            padding: 4px 6px;
+            border-radius: 6px;
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            transform: rotate(180deg);
+            margin-bottom: 4px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            white-space: nowrap;
+            letter-spacing: 0.05em;
+            animation: slideDown 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
         }
 
-        .group:hover .bar-fill {
-            filter: brightness(1.2);
+        .timeline-date {
+            font-size: 9px;
+            color: #666;
+            font-weight: 700;
+            margin-top: 4px;
+            text-transform: uppercase;
         }
 
-        @keyframes barGrow {
-            from { transform: scaleY(0); }
-            to { transform: scaleY(1); }
-        }
+        @keyframes dash { from { stroke-dasharray: 1000; stroke-dashoffset: 1000; } to { stroke-dasharray: 1000; stroke-dashoffset: 0; } }
+        @keyframes fadeInArea { from { opacity: 0; } to { opacity: 0.2; } }
+        @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes fadeInLabel { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideDown { from { opacity: 0; transform: rotate(180deg) translateY(-10px); } to { opacity: 1; transform: rotate(180deg) translateY(0); } }
+
     </style>
 </head>
 <body class="select-none overflow-x-hidden">
@@ -204,7 +253,7 @@
                 <div id="card-workouts" onclick="toggleCard('workouts')" class="bento-card p-4 cursor-pointer group col-span-1 h-fit">
                     <div class="flex justify-between items-start">
                         <div>
-                            <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Тренировки</span>
+                            <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Группы мышц</span>
                             <p id="u-count" class="text-3xl font-black italic tracking-tighter mt-1">0</p>
                         </div>
                         <div class="opacity-30 group-hover:opacity-100 transition-opacity arrow-icon">
@@ -572,78 +621,79 @@
             if(!globalData || !globalData.history) return;
             
             let data = (filter === 'all') ? globalData.history : globalData.history.filter(h => h.program === filter);
-            data = data.slice(0, 7).reverse();
+            data = data.slice(0, 8).reverse();
 
             if (data.length === 0) {
                 container.innerHTML = '<p class="text-zinc-600 text-xs text-center py-8">Нет данных</p>';
                 return;
             }
 
-            let maxValue = 0;
-            let barGradient = '';
-            let unit = '';
-            
-            // Configuration based on chart type
             if (type === 'workouts') {
-                maxValue = 1; 
-                barGradient = 'bg-[#CCFF00] shadow-[0_0_10px_#CCFF0040]';
-                unit = '';
-                // Transform data for frequency visualization
-                data = data.map(d => ({ val: 1, label: d.date.split('.')[0] })); 
-            } else if (type === 'water') {
-                maxValue = Math.max(...data.map(d => d.water)) * 1.15;
-                if(maxValue === 0) maxValue = 1;
-                barGradient = 'bg-gradient-to-t from-cyan-500 to-blue-500 shadow-[0_0_12px_rgba(6,182,212,0.4)]';
-                unit = ' мл';
-                data = data.map(d => ({ val: d.water, label: d.date.split('.')[0] }));
-            } else if (type === 'time') {
-                maxValue = Math.max(...data.map(d => d.time)) * 1.15;
-                if(maxValue === 0) maxValue = 1;
-                barGradient = 'bg-gradient-to-t from-orange-400 to-red-500 shadow-[0_0_12px_rgba(249,115,22,0.4)]';
-                unit = ' мин';
-                data = data.map(d => ({ val: d.time, label: d.date.split('.')[0] }));
+                let html = '<div class="timeline-container">';
+                data.forEach((d, i) => {
+                    const delay = i * 100;
+                    html += `
+                        <div class="timeline-item" style="animation: popIn 0.4s ease-out ${delay}ms backwards;">
+                            <div class="timeline-badge">${d.group || 'N/A'}</div>
+                            <div class="timeline-line">
+                                <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#CCFF00] rounded-full shadow-[0_0_8px_#CCFF00]"></div>
+                            </div>
+                            <div class="timeline-date">${d.date.split('.')[0]}.${d.date.split('.')[1]}</div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                container.innerHTML = html;
+            } 
+            else {
+                let strokeColor = '#3b82f6'; 
+                let fillColor = 'rgba(59, 130, 246, 0.2)'; 
+                let unit = '';
+                let dataKey = '';
+
+                if (type === 'water') {
+                    unit = 'л';
+                    dataKey = 'water';
+                    strokeColor = '#06b6d4'; 
+                } else {
+                    unit = 'м';
+                    dataKey = 'time';
+                    strokeColor = '#f97316';
+                    fillColor = 'rgba(249, 115, 22, 0.2)';
+                }
+
+                const values = data.map(d => type === 'water' ? d.water / 1000 : d.time);
+                const maxVal = Math.max(...values, 1);
+                const points = values.map((val, i) => {
+                    const x = (i / (values.length - 1 || 1)) * 100;
+                    const y = 100 - ((val / maxVal) * 80); 
+                    return { x, y, val, label: data[i].date.split('.')[0] };
+                });
+
+                let pathD = `M ${points[0].x} ${points[0].y}`;
+                points.forEach(p => pathD += ` L ${p.x} ${p.y}`);
+                
+                let areaD = `${pathD} L ${points[points.length-1].x} 100 L ${points[0].x} 100 Z`;
+
+                let svgHtml = `
+                <div class="svg-chart-container pt-6 px-2">
+                    <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="width:100%; height:100%; overflow:visible;">
+                        <path d="${areaD}" class="chart-area-path" fill="${strokeColor}" />
+                        
+                        <path d="${pathD}" class="chart-line-path" stroke="${strokeColor}" />
+                        
+                        ${points.map((p, i) => `
+                            <circle cx="${p.x}" cy="${p.y}" class="chart-dot" style="animation-delay: ${i*100}ms" />
+                            <text x="${p.x}" y="${p.y - 8}" class="chart-dot chart-label" style="animation-delay: ${i*100 + 200}ms">
+                                ${p.val}${unit}
+                            </text>
+                             <text x="${p.x}" y="115" class="chart-label" style="fill:#666; animation-delay: ${i*100}ms">${p.label}</text>
+                        `).join('')}
+                    </svg>
+                </div>`;
+                
+                container.innerHTML = svgHtml;
             }
-
-            let html = `<div class="relative h-48 w-full mt-4 px-2 pt-8 pb-6 select-none">`;
-            
-            // Grid lines (Background)
-            html += `
-                <div class="absolute inset-0 flex flex-col justify-between px-2 pt-8 pb-6 pointer-events-none opacity-20">
-                    <div class="border-t border-dashed border-zinc-500 w-full h-0"></div>
-                    <div class="border-t border-dashed border-zinc-500 w-full h-0"></div>
-                    <div class="border-t border-dashed border-zinc-500 w-full h-0"></div>
-                </div>
-            `;
-            
-            // Bars container
-            html += `<div class="flex items-end justify-between h-full gap-2 relative z-10">`;
-
-            data.forEach((d, i) => {
-                const heightPct = maxValue > 0 ? Math.min((d.val / maxValue) * 100, 100) : 0;
-                const animDelay = i * 100;
-                
-                // Tooltip text
-                const tooltipText = `${d.val}${unit}`;
-                
-                html += `
-                    <div class="flex-1 flex flex-col items-center justify-end h-full group relative cursor-pointer">
-                        <div class="chart-tooltip">
-                            ${tooltipText}
-                        </div>
-
-                        <div class="w-full h-full absolute bottom-0 bg-zinc-800/30 rounded-t-sm"></div>
-
-                        <div class="w-full relative z-10 rounded-t-sm ${barGradient} bar-fill" 
-                             style="height: ${heightPct}%; animation: barGrow 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${animDelay}ms backwards;">
-                        </div>
-
-                        <span class="mt-3 text-[9px] font-bold text-zinc-500 uppercase tracking-wider group-hover:text-white transition-colors">${d.label}</span>
-                    </div>
-                `;
-            });
-            
-            html += `</div></div>`;
-            container.innerHTML = html;
         }
 
         function deleteItem(rowIndex, btn, actionType) {
