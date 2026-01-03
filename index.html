@@ -10,15 +10,14 @@
         :root { --bg: #050505; --card: #121212; --accent: #CCFF00; --danger: #FF3B30; }
         body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; padding-bottom: 90px; }
         
-        /* Улучшенная карточка с плавной анимацией */
         .bento-card { 
             background: var(--card); 
             border: 1px solid rgba(255,255,255,0.05); 
-            border-radius: 20px; 
+            border-radius: 24px; 
             position: relative; 
             overflow: hidden; 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Плавная кривая Безье */
-            will-change: grid-column, transform, height; /* Оптимизация рендеринга */
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            will-change: grid-column, transform, height; 
         }
         .bento-card:active { transform: scale(0.99); }
         
@@ -33,20 +32,19 @@
         .fade-in { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* Исправленная анимация графика */
         .chart-wrapper { 
             max-height: 0; 
             opacity: 0; 
             overflow: hidden; 
-            transition: max-height 0.3s ease-out, opacity 0.3s ease-in; 
+            transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-in; 
         }
         .chart-wrapper.open { 
-            max-height: 200px; /* Высота графика */
+            max-height: 250px; 
             opacity: 1; 
-            margin-top: 16px; 
-            padding-bottom: 4px;
+            margin-top: 20px; 
+            padding-bottom: 8px;
         }
-        .arrow-icon { transition: transform 0.3s ease; }
+        .arrow-icon { transition: transform 0.4s ease; }
     </style>
 </head>
 <body class="select-none overflow-x-hidden">
@@ -152,26 +150,34 @@
             
             <div class="grid grid-cols-2 gap-3 mb-3 relative">
                 <div id="card-workouts" onclick="toggleCard('workouts')" class="bento-card p-4 cursor-pointer group col-span-1 h-fit">
-                    <div class="absolute top-3 right-3 opacity-50 arrow-icon">
-                        <svg class="w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Тренировки</span>
+                            <p id="u-count" class="text-3xl font-black italic tracking-tighter mt-1">0</p>
+                        </div>
+                        <div class="opacity-30 group-hover:opacity-100 transition-opacity arrow-icon">
+                            <svg class="w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
                     </div>
-                    <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Тренировки</span>
-                    <p id="u-count" class="text-3xl font-black italic tracking-tighter mt-1">0</p>
                     <div id="chart-workouts" class="chart-wrapper"></div>
                 </div>
                 
                 <div id="card-water" onclick="toggleCard('water')" class="bento-card p-4 cursor-pointer group col-span-1 h-fit">
-                    <div class="absolute top-3 right-3 opacity-50 arrow-icon">
-                        <svg class="w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    <div class="flex justify-between items-start">
+                        <div>
+                             <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Вода (Л)</span>
+                             <p id="u-water" class="text-3xl font-black italic tracking-tighter text-blue-400 mt-1">0</p>
+                        </div>
+                        <div class="opacity-30 group-hover:opacity-100 transition-opacity arrow-icon">
+                            <svg class="w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
                     </div>
-                    <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Вода (Л)</span>
-                    <p id="u-water" class="text-3xl font-black italic tracking-tighter text-blue-400 mt-1">0</p>
                     <div id="chart-water" class="chart-wrapper"></div>
                 </div>
             </div>
 
             <div id="card-time" onclick="toggleCard('time')" class="bento-card p-4 mb-6 cursor-pointer relative">
-                <div class="absolute top-4 right-4 opacity-50 arrow-icon">
+                <div class="absolute top-4 right-4 opacity-30 arrow-icon">
                      <svg class="w-5 h-5 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
                 <div class="flex items-center justify-between pr-8">
@@ -472,9 +478,8 @@
 
             renderHistory(filteredHistory);
 
-            // AUTO-UPDATE OPEN CHARTS
-            if(document.getElementById('card-workouts').classList.contains('col-span-2')) renderInlineChart('workouts', document.getElementById('chart-workouts'));
-            if(document.getElementById('card-water').classList.contains('col-span-2')) renderInlineChart('water', document.getElementById('chart-water'));
+            if(document.getElementById('chart-workouts').classList.contains('open')) renderInlineChart('workouts', document.getElementById('chart-workouts'));
+            if(document.getElementById('chart-water').classList.contains('open')) renderInlineChart('water', document.getElementById('chart-water'));
             if(document.getElementById('chart-time').classList.contains('open')) renderInlineChart('time', document.getElementById('chart-time'));
         }
 
@@ -483,35 +488,32 @@
             const chartId = `chart-${type}`;
             const card = document.getElementById(cardId);
             const chart = document.getElementById(chartId);
-            const isAlreadyOpen = card.classList.contains('col-span-2') || (type === 'time' && chart.classList.contains('open'));
+            const arrow = card.querySelector('.arrow-icon');
+            
+            const isClosing = chart.classList.contains('open');
 
-            // 1. Reset ALL cards first (synchronous)
-            ['workouts', 'water', 'time'].forEach(t => {
-                const c = document.getElementById(`card-${t}`);
-                const ch = document.getElementById(`chart-${t}`);
-                if(c && t !== 'time') c.classList.replace('col-span-2', 'col-span-1');
-                if(ch) ch.classList.remove('open');
-                const arrow = c.querySelector('.arrow-icon');
-                if(arrow) arrow.style.transform = 'rotate(0deg)';
-            });
-
-            // 2. Open clicked card immediately if not already open
-            if (!isAlreadyOpen) {
-                if (type !== 'time') {
+            if (type !== 'time') {
+                if (isClosing) {
+                    card.classList.replace('col-span-2', 'col-span-1');
+                    chart.classList.remove('open');
+                    if(arrow) arrow.style.transform = 'rotate(0deg)';
+                } else {
                     card.classList.replace('col-span-1', 'col-span-2');
+                    renderInlineChart(type, chart);
+                    requestAnimationFrame(() => { chart.classList.add('open'); });
+                    if(arrow) arrow.style.transform = 'rotate(180deg)';
                 }
-                
-                // Render chart data IMMEDIATELY, then animate open
-                renderInlineChart(type, chart);
-                requestAnimationFrame(() => {
-                     chart.classList.add('open');
-                });
-                
-                const arrow = card.querySelector('.arrow-icon');
-                if(arrow) arrow.style.transform = 'rotate(180deg)';
-                
-                tg.HapticFeedback.selectionChanged();
+            } else {
+                 if (isClosing) {
+                    chart.classList.remove('open');
+                    if(arrow) arrow.style.transform = 'rotate(0deg)';
+                } else {
+                    renderInlineChart(type, chart);
+                    requestAnimationFrame(() => { chart.classList.add('open'); });
+                    if(arrow) arrow.style.transform = 'rotate(180deg)';
+                }
             }
+            tg.HapticFeedback.selectionChanged();
         }
 
         function renderInlineChart(type, container) {
@@ -527,14 +529,14 @@
             }
 
             let maxValue = 0;
-            let chartColor = 'bg-[#CCFF00]';
+            let chartGradient = 'from-[#CCFF00] to-transparent';
             let unit = '';
             
             if (type === 'workouts') {
                 maxValue = 1.5; 
                 data = data.map(d => ({ val: 1, label: d.date.split('.')[0] }));
             } else if (type === 'water') {
-                chartColor = 'bg-blue-500';
+                chartGradient = 'from-blue-500 to-blue-900/10';
                 unit = ' мл';
                 data = data.map(d => ({ val: d.water, label: d.date.split('.')[0] }));
                 maxValue = Math.max(...data.map(d => d.val)) * 1.2;
@@ -544,21 +546,25 @@
                 maxValue = Math.max(...data.map(d => d.val)) * 1.2;
             }
 
-            let html = '<div class="h-40 flex items-end justify-between gap-2 mt-2 px-1">';
-            data.forEach(d => {
+            let html = '<div class="h-40 bg-white/5 rounded-xl flex items-end justify-between gap-2 mt-2 px-3 pb-2 pt-6 border border-white/5">';
+            data.forEach((d, i) => {
                 const heightPct = maxValue > 0 ? (d.val / maxValue) * 100 : 0;
                 const displayVal = d.val > 0 ? d.val : '';
+                // Staggered animation for bars
+                const animDelay = i * 50; 
+                
                 html += `
                     <div class="flex flex-col items-center justify-end h-full w-full group">
-                         <span class="mb-1 text-xs font-bold text-white tracking-tighter ${displayVal ? '' : 'opacity-0'}">${displayVal}</span>
-                         <div class="w-full bg-zinc-800 rounded-t relative overflow-hidden h-full flex items-end">
-                            <div class="w-full ${chartColor} rounded-t opacity-90 transition-all duration-500" style="height: ${heightPct}%;"></div>
+                         <span class="mb-2 text-[10px] font-black text-white tracking-tighter ${displayVal ? '' : 'opacity-0'} transition-all group-hover:scale-110">${displayVal}</span>
+                         <div class="w-full bg-zinc-800/50 rounded-t-md relative overflow-hidden h-full flex items-end">
+                            <div class="w-full bg-gradient-to-t ${chartGradient} rounded-t-md opacity-90 hover:opacity-100 transition-all duration-700 ease-out" style="height: ${heightPct}%; animation: growUp 0.6s ease-out ${animDelay}ms backwards;"></div>
                          </div>
-                         <span class="mt-1 text-[8px] text-zinc-500 font-bold">${d.label}</span>
+                         <span class="mt-2 text-[8px] text-zinc-500 font-bold uppercase tracking-wider">${d.label}</span>
                     </div>
                 `;
             });
-            html += '</div>';
+            html += `</div>
+            <style>@keyframes growUp { from { height: 0; opacity: 0; } to { opacity: 0.9; } }</style>`;
             container.innerHTML = html;
         }
 
