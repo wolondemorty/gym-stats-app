@@ -10,8 +10,8 @@
     <style>
         :root { --bg: #050505; --card: #121212; --accent: #CCFF00; --danger: #FF3B30; }
         body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; padding-bottom: 90px; }
-        .bento-card { background: var(--card); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; position: relative; transition: all 0.2s ease; }
-        .bento-card.interactive:active { transform: scale(0.98); border-color: var(--accent); }
+        .bento-card { background: var(--card); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; position: relative; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden; }
+        .bento-card.active { border-color: rgba(204, 255, 0, 0.3); background: #161616; }
         .glass-nav { background: rgba(18,18,18,0.95); backdrop-filter: blur(12px); border-top: 1px solid rgba(255,255,255,0.08); }
         .input-field { background: #1A1A1A; color: white; border: 1px solid #333; outline: none; transition: 0.2s; }
         .input-field:focus { border-color: var(--accent); }
@@ -22,6 +22,10 @@
         @keyframes spin { to { transform: rotate(360deg); } }
         .fade-in { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Анимация иконки стрелки */
+        .expand-icon { transition: transform 0.3s ease; }
+        .active .expand-icon { transform: rotate(180deg); color: var(--accent); }
     </style>
 </head>
 <body class="select-none overflow-x-hidden">
@@ -97,39 +101,6 @@
         </div>
     </div>
 
-    <div id="modal-charts" class="hidden fixed inset-0 z-50 modal-overlay p-4 items-center justify-center">
-        <div class="bg-[#121212] w-full max-w-sm rounded-3xl p-6 border border-zinc-800 shadow-2xl shadow-black relative">
-            <button onclick="closeModal('modal-charts')" class="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
-            
-            <h3 class="text-2xl font-black italic mb-1 text-white">АНАЛИТИКА</h3>
-            <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-6">Визуализация данных</p>
-
-            <div id="box-chart-time" class="hidden">
-                <div class="flex justify-between items-center mb-4">
-                    <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Динамика (мин)</span>
-                    <span class="text-[9px] text-[#CCFF00] font-bold uppercase tracking-wider">Last 10</span>
-                </div>
-                <div class="relative h-48 w-full"><canvas id="chart-time"></canvas></div>
-            </div>
-
-            <div id="box-chart-groups" class="hidden">
-                <div class="mb-4 text-center">
-                    <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Распределение нагрузки</span>
-                </div>
-                <div class="relative h-56 w-full flex justify-center"><canvas id="chart-groups"></canvas></div>
-            </div>
-
-            <div id="box-chart-water" class="hidden">
-                <div class="mb-4">
-                    <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Водный баланс (мл)</span>
-                </div>
-                <div class="relative h-48 w-full"><canvas id="chart-water"></canvas></div>
-            </div>
-        </div>
-    </div>
-
     <div id="app-container" class="hidden opacity-0 transition-opacity duration-500">
         <header class="px-6 pt-6 pb-2 flex justify-between items-center">
             <div class="flex items-center gap-3">
@@ -160,34 +131,59 @@
             </div>
 
             <div class="grid grid-cols-2 gap-3 mb-3">
-                <div onclick="openChart('time')" class="bento-card interactive p-4 cursor-pointer group">
-                    <div class="absolute top-3 right-3 bg-[#CCFF00]/10 text-[#CCFF00] p-1 rounded-md border border-[#CCFF00]/20 opacity-70 group-hover:opacity-100 transition-opacity">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                <div id="card-time" onclick="toggleChart('time')" class="bento-card p-4 cursor-pointer group">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Тренировки</span>
+                            <p id="u-count" class="text-3xl font-black italic tracking-tighter mt-1">0</p>
+                        </div>
+                        <div class="expand-icon text-zinc-600 group-hover:text-white">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
                     </div>
-                    <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Тренировки</span>
-                    <p id="u-count" class="text-3xl font-black italic tracking-tighter mt-1">0</p>
+                    
+                    <div id="box-chart-time" class="hidden mt-4 pt-4 border-t border-zinc-800">
+                        <div class="relative h-32 w-full"><canvas id="chart-time"></canvas></div>
+                    </div>
                 </div>
                 
-                <div onclick="openChart('water')" class="bento-card interactive p-4 cursor-pointer group border-zinc-800 hover:border-blue-500/50">
-                    <div class="absolute top-3 right-3 bg-blue-500/10 text-blue-400 p-1 rounded-md border border-blue-500/20 opacity-70 group-hover:opacity-100 transition-opacity">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                <div id="card-water" onclick="toggleChart('water')" class="bento-card p-4 cursor-pointer group">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Вода (Л)</span>
+                            <p id="u-water" class="text-3xl font-black italic tracking-tighter text-blue-400 mt-1">0</p>
+                        </div>
+                        <div class="expand-icon text-zinc-600 group-hover:text-white">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
                     </div>
-                    <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Вода (Л)</span>
-                    <p id="u-water" class="text-3xl font-black italic tracking-tighter text-blue-400 mt-1">0</p>
+
+                     <div id="box-chart-water" class="hidden mt-4 pt-4 border-t border-zinc-800">
+                        <div class="relative h-32 w-full"><canvas id="chart-water"></canvas></div>
+                    </div>
                 </div>
             </div>
 
-            <div onclick="openChart('groups')" class="bento-card interactive p-4 mb-6 flex justify-between items-center cursor-pointer group">
-                <div class="absolute top-3 right-3 bg-zinc-800 text-zinc-400 p-1 rounded-md border border-zinc-700 opacity-50 group-hover:opacity-100 transition-opacity">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
+            <div id="card-groups" onclick="toggleChart('groups')" class="bento-card p-4 mb-6 cursor-pointer group">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block mb-1">Прогресс</span>
+                        <span id="u-progress" class="text-lg font-bold text-[#CCFF00]">+0%</span>
+                    </div>
+                    <div class="text-right flex items-center gap-3">
+                         <div>
+                             <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block mb-1">Ср. время</span>
+                            <span id="u-time" class="text-lg font-bold text-white">0 мин</span>
+                         </div>
+                         <div class="expand-icon text-zinc-600 group-hover:text-white">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block mb-1">Прогресс</span>
-                    <span id="u-progress" class="text-lg font-bold text-[#CCFF00]">+0%</span>
-                </div>
-                <div class="text-right pr-6">
-                     <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block mb-1">Ср. время</span>
-                    <span id="u-time" class="text-lg font-bold text-white">0 мин</span>
+
+                <div id="box-chart-groups" class="hidden mt-4 pt-4 border-t border-zinc-800">
+                    <p class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider text-center mb-2">Группы мышц</p>
+                    <div class="relative h-48 w-full flex justify-center"><canvas id="chart-groups"></canvas></div>
                 </div>
             </div>
 
@@ -267,6 +263,9 @@
         let isEditMode = false;
         let currentMacros = null;
         let chartsInstances = {};
+        
+        // Флаг, чтобы графики не рендерились 100 раз при каждом клике, если данные не менялись
+        let chartsInitialized = { time: false, water: false, groups: false };
 
         window.onload = () => {
             const userId = tg.initDataUnsafe?.user?.id;
@@ -283,7 +282,12 @@
                 .then(data => {
                     if (data.error === "Access denied") { showAccessDenied(data); return; }
                     if (data.error === "User not found") { showAccessDenied({ name: 'Пользователь не найден', photo: '' }); return; }
-                    if (data.success) { globalData = data; renderApp(data); } else { renderEmptyState(data.error); }
+                    if (data.success) { 
+                        globalData = data; 
+                        // Сбрасываем флаги графиков при новых данных
+                        chartsInitialized = { time: false, water: false, groups: false };
+                        renderApp(data); 
+                    } else { renderEmptyState(data.error); }
                 })
                 .catch(e => renderEmptyState("Ошибка соединения"));
         }
@@ -433,60 +437,72 @@
                 progEl.innerText = prog; progEl.style.color = prog.includes('-') ? '#FF3B30' : '#CCFF00';
             }
             renderHistory(filtered);
+            
+            // Если фильтр изменился, сбрасываем графики, чтобы они перерисовались при следующем открытии
+            chartsInitialized = { time: false, water: false, groups: false };
+            Object.values(chartsInstances).forEach(c => c.destroy());
+            chartsInstances = {};
         }
 
-        // --- ЛОГИКА ГРАФИКОВ ---
-        function openChart(type) {
-            ['time', 'groups', 'water'].forEach(t => document.getElementById(`box-chart-${t}`).classList.add('hidden'));
-            document.getElementById(`box-chart-${type}`).classList.remove('hidden');
-            openModal('modal-charts');
-            setTimeout(renderCharts, 100);
+        // --- ЛОГИКА РАСКРЫТИЯ ГРАФИКОВ (АККОРДЕОН) ---
+        function toggleChart(type) {
+            const card = document.getElementById('card-' + type);
+            const box = document.getElementById('box-chart-' + type);
+            
+            // Переключаем классы
+            card.classList.toggle('active');
+            box.classList.toggle('hidden');
+            
+            // Если открыли и график еще не нарисован или устарел - рисуем
+            if (!box.classList.contains('hidden')) {
+                renderSingleChart(type);
+            }
         }
 
-        function renderCharts() {
+        function renderSingleChart(type) {
             if (!globalData || !globalData.history) return;
+            
+            // Если график уже есть, можно не перерисовывать, если данные не менялись
+            // Но Chart.js лучше обновлять при ресайзе контейнера (скрытие/показ)
+            if (chartsInstances['chart-' + type]) {
+                chartsInstances['chart-' + type].destroy();
+            }
+
             const recent = globalData.history.slice(0, 10).reverse();
             const labels = recent.map(h => h.date.split('.')[0]); 
-            const timeData = recent.map(h => h.time);
-            const waterData = recent.map(h => h.water);
-
-            const groupsCount = {};
-            globalData.history.forEach(h => { groupsCount[h.group] = (groupsCount[h.group] || 0) + 1; });
             
             Chart.defaults.color = '#71717a'; Chart.defaults.font.family = 'Inter';
-            
-            // 1. Time Chart
-            destroyChart('chart-time');
-            const ctxTime = document.getElementById('chart-time').getContext('2d');
-            let gradientTime = ctxTime.createLinearGradient(0, 0, 0, 400);
-            gradientTime.addColorStop(0, 'rgba(204, 255, 0, 0.5)'); gradientTime.addColorStop(1, 'rgba(204, 255, 0, 0)');
 
-            chartsInstances['chart-time'] = new Chart(ctxTime, {
-                type: 'line',
-                data: { labels: labels, datasets: [{ label: 'Минуты', data: timeData, borderColor: '#CCFF00', backgroundColor: gradientTime, borderWidth: 2, pointBackgroundColor: '#121212', pointBorderColor: '#CCFF00', pointRadius: 4, fill: true, tension: 0.4 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false, drawBorder: false } }, y: { grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true } } }
-            });
-
-            // 2. Groups Chart
-            destroyChart('chart-groups');
-            chartsInstances['chart-groups'] = new Chart(document.getElementById('chart-groups'), {
-                type: 'doughnut',
-                data: { labels: Object.keys(groupsCount), datasets: [{ data: Object.values(groupsCount), backgroundColor: ['#CCFF00', '#FFFFFF', '#3F3F46', '#71717A', '#27272A'], borderWidth: 0, hoverOffset: 4 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10, weight: 'bold' }, color: '#fff' } } }, cutout: '70%' }
-            });
-
-            // 3. Water Chart
-            destroyChart('chart-water');
-            chartsInstances['chart-water'] = new Chart(document.getElementById('chart-water'), {
-                type: 'bar',
-                data: { labels: labels, datasets: [{ label: 'Мл', data: waterData, backgroundColor: '#60A5FA', borderRadius: 4, barThickness: 12 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { display: false } } }
-            });
+            if (type === 'time') {
+                const timeData = recent.map(h => h.time);
+                const ctx = document.getElementById('chart-time').getContext('2d');
+                let grad = ctx.createLinearGradient(0, 0, 0, 300);
+                grad.addColorStop(0, 'rgba(204, 255, 0, 0.4)'); grad.addColorStop(1, 'rgba(204, 255, 0, 0)');
+                
+                chartsInstances['chart-time'] = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: labels, datasets: [{ label: 'Минуты', data: timeData, borderColor: '#CCFF00', backgroundColor: grad, borderWidth: 2, pointBackgroundColor: '#121212', pointBorderColor: '#CCFF00', pointRadius: 4, fill: true, tension: 0.4 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true } } }
+                });
+            } else if (type === 'water') {
+                const waterData = recent.map(h => h.water);
+                chartsInstances['chart-water'] = new Chart(document.getElementById('chart-water'), {
+                    type: 'bar',
+                    data: { labels: labels, datasets: [{ label: 'Мл', data: waterData, backgroundColor: '#60A5FA', borderRadius: 4, barThickness: 12 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { display: false } } }
+                });
+            } else if (type === 'groups') {
+                 const groupsCount = {};
+                 globalData.history.forEach(h => { groupsCount[h.group] = (groupsCount[h.group] || 0) + 1; });
+                 chartsInstances['chart-groups'] = new Chart(document.getElementById('chart-groups'), {
+                    type: 'doughnut',
+                    data: { labels: Object.keys(groupsCount), datasets: [{ data: Object.values(groupsCount), backgroundColor: ['#CCFF00', '#FFFFFF', '#3F3F46', '#71717A', '#27272A'], borderWidth: 0, hoverOffset: 4 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10, weight: 'bold' }, color: '#fff' } } }, cutout: '75%' }
+                });
+            }
         }
 
-        function destroyChart(id) { if (chartsInstances[id]) chartsInstances[id].destroy(); }
-
-        // --- ОСТАЛЬНЫЕ ФУНКЦИИ (Удаление, Сабмит и т.д.) ---
+        // --- ОСТАЛЬНЫЕ ФУНКЦИИ ---
         function deleteItem(rowIndex, btn, actionType) {
             if(!confirm("Удалить запись?")) return;
             const userId = tg.initDataUnsafe?.user?.id;
