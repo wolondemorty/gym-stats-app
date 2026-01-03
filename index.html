@@ -9,8 +9,19 @@
     <style>
         :root { --bg: #050505; --card: #121212; --accent: #CCFF00; --danger: #FF3B30; }
         body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; padding-bottom: 90px; }
-        .bento-card { background: var(--card); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; position: relative; overflow: hidden; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
-        .bento-card:active { transform: scale(0.98); }
+        
+        /* Улучшенная карточка с плавной анимацией */
+        .bento-card { 
+            background: var(--card); 
+            border: 1px solid rgba(255,255,255,0.05); 
+            border-radius: 20px; 
+            position: relative; 
+            overflow: hidden; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Плавная кривая Безье */
+            will-change: grid-column, transform, height; /* Оптимизация рендеринга */
+        }
+        .bento-card:active { transform: scale(0.99); }
+        
         .glass-nav { background: rgba(18,18,18,0.95); backdrop-filter: blur(12px); border-top: 1px solid rgba(255,255,255,0.08); }
         .input-field { background: #1A1A1A; color: white; border: 1px solid #333; outline: none; transition: 0.2s; }
         .input-field:focus { border-color: var(--accent); }
@@ -22,8 +33,19 @@
         .fade-in { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        .chart-wrapper { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-in-out, opacity 0.3s ease; opacity: 0; }
-        .chart-wrapper.open { max-height: 300px; opacity: 1; margin-top: 20px; padding-bottom: 5px; }
+        /* Исправленная анимация графика */
+        .chart-wrapper { 
+            max-height: 0; 
+            opacity: 0; 
+            overflow: hidden; 
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-in; 
+        }
+        .chart-wrapper.open { 
+            max-height: 200px; /* Высота графика */
+            opacity: 1; 
+            margin-top: 16px; 
+            padding-bottom: 4px;
+        }
         .arrow-icon { transition: transform 0.3s ease; }
     </style>
 </head>
@@ -128,8 +150,8 @@
                 </div>
             </div>
             
-            <div class="grid grid-cols-2 gap-3 mb-3">
-                <div id="card-workouts" onclick="toggleCard('workouts')" class="bento-card p-4 cursor-pointer group col-span-1">
+            <div class="grid grid-cols-2 gap-3 mb-3 relative">
+                <div id="card-workouts" onclick="toggleCard('workouts')" class="bento-card p-4 cursor-pointer group col-span-1 h-fit">
                     <div class="absolute top-3 right-3 opacity-50 arrow-icon">
                         <svg class="w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
@@ -138,7 +160,7 @@
                     <div id="chart-workouts" class="chart-wrapper"></div>
                 </div>
                 
-                <div id="card-water" onclick="toggleCard('water')" class="bento-card p-4 cursor-pointer group col-span-1">
+                <div id="card-water" onclick="toggleCard('water')" class="bento-card p-4 cursor-pointer group col-span-1 h-fit">
                     <div class="absolute top-3 right-3 opacity-50 arrow-icon">
                         <svg class="w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
@@ -244,12 +266,10 @@
 
         window.onload = () => {
             const userId = tg.initDataUnsafe?.user?.id;
-            
             if (!userId) {
                 showAccessDenied({ name: 'Доступ ограничен', photo: '', notTelegram: true });
                 return; 
             }
-            
             loadData(userId);
         };
 
@@ -257,22 +277,10 @@
             fetch(`${GAS_URL}?id=${userId}`)
                 .then(res => res.json())
                 .then(data => {
-                    if (data.error === "Access denied") {
-                        showAccessDenied(data);
-                        return;
-                    }
-
-                    if (data.error === "User not found") {
-                        showAccessDenied({ name: 'Пользователь не найден', photo: '' });
-                        return;
-                    }
-
-                    if (data.success) {
-                        globalData = data;
-                        renderApp(data);
-                    } else {
-                        renderEmptyState(data.error);
-                    }
+                    if (data.error === "Access denied") { showAccessDenied(data); return; }
+                    if (data.error === "User not found") { showAccessDenied({ name: 'Пользователь не найден', photo: '' }); return; }
+                    if (data.success) { globalData = data; renderApp(data); } 
+                    else { renderEmptyState(data.error); }
                 })
                 .catch(e => renderEmptyState("Ошибка соединения"));
         }
@@ -280,12 +288,11 @@
         function showAccessDenied(data) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('access-denied').classList.remove('hidden');
-            
             const photoEl = document.getElementById('ad-photo');
-            const lockEl = document.getElementById('ad-lock');
-            const anonEl = document.getElementById('ad-anon');
-            const textEl = document.getElementById('ad-text');
             const nameEl = document.getElementById('ad-name');
+            const textEl = document.getElementById('ad-text');
+            const anonEl = document.getElementById('ad-anon');
+            const lockEl = document.getElementById('ad-lock');
 
             if (data.notTelegram) {
                 photoEl.classList.add('hidden');
@@ -342,9 +349,7 @@
                     opt.innerText = p.length > 20 ? p.substring(0,20)+'...' : p;
                     select.appendChild(opt);
                 });
-                if (!hasMultiplePrograms) {
-                    select.value = data.programs[0];
-                }
+                if (!hasMultiplePrograms) select.value = data.programs[0];
             }
 
             filterData();
@@ -404,7 +409,6 @@
             container.innerHTML = list.map(r => `
                 <div class="group relative bento-card p-4 mb-3 border-l-4 border-[#CCFF00]">
                     <button onclick="deleteItem(${r.rowIndex}, this, 'delete_record')" class="edit-tool absolute top-2 right-2 w-8 h-8 bg-red-500/10 text-red-500 rounded-lg items-center justify-center hover:bg-red-500 hover:text-white transition-all z-20">✕</button>
-                    
                     <div class="flex justify-between items-start relative z-10">
                         <div>
                              <h3 class="text-base font-black uppercase italic text-white leading-tight tracking-wide pr-10">${r.name}</h3>
@@ -467,6 +471,11 @@
             }
 
             renderHistory(filteredHistory);
+
+            // AUTO-UPDATE OPEN CHARTS
+            if(document.getElementById('card-workouts').classList.contains('col-span-2')) renderInlineChart('workouts', document.getElementById('chart-workouts'));
+            if(document.getElementById('card-water').classList.contains('col-span-2')) renderInlineChart('water', document.getElementById('chart-water'));
+            if(document.getElementById('chart-time').classList.contains('open')) renderInlineChart('time', document.getElementById('chart-time'));
         }
 
         function toggleCard(type) {
@@ -476,7 +485,7 @@
             const chart = document.getElementById(chartId);
             const isAlreadyOpen = card.classList.contains('col-span-2') || (type === 'time' && chart.classList.contains('open'));
 
-            // Reset ALL cards to default
+            // 1. Reset ALL cards first (synchronous)
             ['workouts', 'water', 'time'].forEach(t => {
                 const c = document.getElementById(`card-${t}`);
                 const ch = document.getElementById(`chart-${t}`);
@@ -486,15 +495,17 @@
                 if(arrow) arrow.style.transform = 'rotate(0deg)';
             });
 
-            // Open clicked card if it wasn't open
+            // 2. Open clicked card immediately if not already open
             if (!isAlreadyOpen) {
                 if (type !== 'time') {
                     card.classList.replace('col-span-1', 'col-span-2');
                 }
-                setTimeout(() => {
-                    chart.classList.add('open');
-                    renderInlineChart(type, chart);
-                }, 150);
+                
+                // Render chart data IMMEDIATELY, then animate open
+                renderInlineChart(type, chart);
+                requestAnimationFrame(() => {
+                     chart.classList.add('open');
+                });
                 
                 const arrow = card.querySelector('.arrow-icon');
                 if(arrow) arrow.style.transform = 'rotate(180deg)';
@@ -511,43 +522,39 @@
             data = data.slice(0, 7).reverse();
 
             if (data.length === 0) {
-                container.innerHTML = '<p class="text-zinc-600 text-xs text-center py-4">Нет данных для графика</p>';
+                container.innerHTML = '<p class="text-zinc-600 text-xs text-center py-8">Нет данных</p>';
                 return;
             }
 
             let maxValue = 0;
             let chartColor = 'bg-[#CCFF00]';
             let unit = '';
-            let valKey = '';
-
+            
             if (type === 'workouts') {
-                valKey = 'count';
                 maxValue = 1.5; 
                 data = data.map(d => ({ val: 1, label: d.date.split('.')[0] }));
             } else if (type === 'water') {
-                valKey = 'water';
                 chartColor = 'bg-blue-500';
                 unit = ' мл';
                 data = data.map(d => ({ val: d.water, label: d.date.split('.')[0] }));
                 maxValue = Math.max(...data.map(d => d.val)) * 1.2;
             } else if (type === 'time') {
-                valKey = 'time';
                 unit = ' мин';
                 data = data.map(d => ({ val: d.time, label: d.date.split('.')[0] }));
                 maxValue = Math.max(...data.map(d => d.val)) * 1.2;
             }
 
-            let html = '<div class="h-40 flex items-end justify-between gap-1 mt-2">';
+            let html = '<div class="h-40 flex items-end justify-between gap-2 mt-2 px-1">';
             data.forEach(d => {
                 const heightPct = maxValue > 0 ? (d.val / maxValue) * 100 : 0;
                 const displayVal = d.val > 0 ? d.val : '';
                 html += `
-                    <div class="flex flex-col items-center justify-end h-full flex-1 group">
-                         <span class="mb-1 text-md font-bold text-white tracking-tighter ${displayVal ? '' : 'opacity-0'}">${displayVal}<span class="text-[8px] ml-0.5 text-zinc-500 font-normal uppercase">${unit}</span></span>
-                         <div class="w-full max-w-[40px] bg-zinc-800 rounded-t relative overflow-hidden h-full flex items-end">
+                    <div class="flex flex-col items-center justify-end h-full w-full group">
+                         <span class="mb-1 text-xs font-bold text-white tracking-tighter ${displayVal ? '' : 'opacity-0'}">${displayVal}</span>
+                         <div class="w-full bg-zinc-800 rounded-t relative overflow-hidden h-full flex items-end">
                             <div class="w-full ${chartColor} rounded-t opacity-90 transition-all duration-500" style="height: ${heightPct}%;"></div>
                          </div>
-                         <span class="mt-1 text-[9px] text-zinc-500 font-bold">${d.label}</span>
+                         <span class="mt-1 text-[8px] text-zinc-500 font-bold">${d.label}</span>
                     </div>
                 `;
             });
@@ -558,19 +565,13 @@
         function deleteItem(rowIndex, btn, actionType) {
             if(!confirm("Удалить запись?")) return;
             const userId = tg.initDataUnsafe?.user?.id;
-            
             const row = btn.closest('.group') || btn.closest('.bento-card');
             row.style.opacity = '0';
             setTimeout(() => row.style.display = 'none', 300);
-
             fetch(`${GAS_URL}?id=${userId}&action=${actionType}&row=${rowIndex}`)
                 .then(res => res.json())
                 .then(d => {
-                    if(d.success) {
-                        fetch(`${GAS_URL}?id=${userId}`).then(r => r.json()).then(newdata => { 
-                            globalData = newdata; 
-                        });
-                    }
+                    if(d.success) fetch(`${GAS_URL}?id=${userId}`).then(r => r.json()).then(newdata => { globalData = newdata; filterData(); });
                 });
         }
         
@@ -624,7 +625,6 @@
             if (!currentMacros) return;
             const userId = tg.initDataUnsafe?.user?.id;
             if(!isCustom) document.getElementById('btn-save').innerText = "Сохранение...";
-
             fetch(`${GAS_URL}?id=${userId}&action=save_macros&cals=${currentMacros.cals}&prot=${currentMacros.p}&fats=${currentMacros.f}&carbs=${currentMacros.c}`)
                 .then(res => res.json())
                 .then(data => {
@@ -645,16 +645,12 @@
             const act = document.getElementById('c-activity').value;
             const goal = document.querySelector('input[name="goal"]:checked').value;
             const gen = document.querySelector('input[name="gender"]:checked').value;
-            
             if(!w || !h || !a) { tg.HapticFeedback.notificationOccurred('error'); return; }
-            
             let bmr = (10*w) + (6.25*h) - (5*a) + (gen==='male'?5:-161);
             let tdee = bmr * act;
             if(goal==='cut') tdee *= 0.85; else if(goal==='bulk') tdee *= 1.15;
-            
             const cals = Math.round(tdee);
             currentMacros = { cals, p: Math.round(cals*0.3/4), f: Math.round(cals*0.25/9), c: Math.round(cals*0.45/4) };
-            
             document.getElementById('res-total').innerText = cals;
             document.getElementById('res-p').innerText = currentMacros.p;
             document.getElementById('res-f').innerText = currentMacros.f;
