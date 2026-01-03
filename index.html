@@ -46,15 +46,6 @@
             padding-bottom: 5px;
         }
         .arrow-icon { transition: transform 0.4s ease-in-out; }
-
-        .streak-fire {
-            filter: drop-shadow(0 0 8px rgba(255, 100, 0, 0.5));
-            animation: flicker 2s infinite alternate;
-        }
-        @keyframes flicker {
-            0% { transform: scale(1); opacity: 0.9; }
-            100% { transform: scale(1.1); opacity: 1; }
-        }
     </style>
 </head>
 <body class="select-none overflow-x-hidden">
@@ -148,9 +139,7 @@
         </header>
 
         <section id="tab-stats" class="px-5 pt-4 fade-in">
-            <div id="streak-container" class="mb-4"></div>
             <div id="macros-container" class="mb-4"></div>
-            
             <div class="flex justify-between items-center mb-3 px-1">
                 <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Дашборд</p>
                 <div class="relative">
@@ -291,53 +280,6 @@
             loadData(userId);
         };
 
-        function calculateStreak(history) {
-            if (!history || history.length === 0) return 0;
-            
-            const dates = [...new Set(history.map(h => {
-                const parts = h.date.split('.');
-                return new Date(2026, parts[1]-1, parts[0]).getTime();
-            }))].sort((a,b) => b - a);
-            
-            let streak = 0;
-            let today = new Date();
-            today.setHours(0,0,0,0);
-            let checkDate = today.getTime();
-            
-            if (dates[0] < checkDate - 86400000) return 0;
-            if (dates[0] === checkDate || dates[0] === checkDate - 86400000) {
-                streak = 1;
-                for (let i = 0; i < dates.length - 1; i++) {
-                    if (dates[i] - dates[i+1] === 86400000) streak++;
-                    else break;
-                }
-            }
-            return streak;
-        }
-
-        function renderStreak(history) {
-            const streak = calculateStreak(history);
-            const container = document.getElementById('streak-container');
-            if (streak > 0) {
-                container.innerHTML = `
-                    <div class="bento-card p-4 flex items-center justify-between bg-gradient-to-r from-orange-500/10 to-transparent border-orange-500/20">
-                        <div class="flex items-center gap-3">
-                            <div class="text-3xl streak-fire">🔥</div>
-                            <div>
-                                <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Твоя серия</p>
-                                <p class="text-xl font-black italic text-white">${streak} ${streak === 1 ? 'ДЕНЬ' : streak < 5 ? 'ДНЯ' : 'ДНЕЙ'}</p>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-[8px] bg-orange-500/20 text-orange-500 px-2 py-1 rounded-full font-bold uppercase">В ударе!</span>
-                        </div>
-                    </div>
-                `;
-            } else {
-                container.innerHTML = '';
-            }
-        }
-
         function loadData(userId) {
             fetch(`${GAS_URL}?id=${userId}`)
                 .then(res => res.json())
@@ -393,7 +335,6 @@
             }
 
             renderMacrosWidget(data.macros);
-            renderStreak(data.history);
             
             const select = document.getElementById('prog-filter');
             select.innerHTML = '';
