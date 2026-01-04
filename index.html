@@ -584,7 +584,7 @@ function renderInlineChart(type, container) {
         return;
     }
 
-    if (type === 'workouts') {
+if (type === 'workouts') {
     const activeDates = new Set();
     data.forEach(d => {
         if (!d.date) return;
@@ -647,22 +647,6 @@ function renderInlineChart(type, container) {
     `;
 }
 
-        container.innerHTML = `
-            <div class="p-4 pt-2">
-                <div class="flex justify-between items-end mb-3">
-                    <span class="text-[9px] text-zinc-500 font-bold uppercase">Последние 5 недель</span>
-                    <div class="flex gap-2">
-                        <div class="flex items-center gap-1"><div class="w-1.5 h-1.5 rounded bg-[#27272a]"></div><span class="text-[8px] text-zinc-500">Отдых</span></div>
-                        <div class="flex items-center gap-1"><div class="w-1.5 h-1.5 rounded bg-[#CCFF00]"></div><span class="text-[8px] text-zinc-500">Зал</span></div>
-                    </div>
-                </div>
-                <div class="grid grid-cols-7 gap-1.5">
-                    ${daysHtml.join('')}
-                </div>
-            </div>
-        `;
-        return;
-    }
 
     // Для water и time строим графики обычным способом
     if (type === 'water' || type === 'time') {
