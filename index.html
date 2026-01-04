@@ -226,7 +226,8 @@
                 <button onclick="openModal('modal-record')" class="edit-tool bg-zinc-800 text-[#CCFF00] px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase border border-zinc-700">+ Добавить</button>
             </div>
             <div id="u-records" class="space-y-3 mb-8"></div>
- <div class="flex items-center justify-between mb-3 px-1">
+            
+            <div class="flex items-center justify-between mb-3 px-1">
                 <h2 class="text-xs font-bold text-white uppercase tracking-widest">История</h2>
 
                 <div class="flex items-center gap-3">
@@ -248,6 +249,7 @@
                     <button onclick="openModal('modal-workout')" class="edit-tool bg-zinc-800 text-[#CCFF00] px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase border border-zinc-700">+ Вручную</button>
                 </div>
             </div>
+            
             <div id="u-history" class="space-y-2 pb-4"></div>
         </section>
 
@@ -314,16 +316,23 @@
         let globalData = null;
         let isEditMode = false;
         let currentMacros = null;
-        let historyLimit = 5; 
+        let historyLimit = 5;
 
-function updateHistoryLimit() {
+        window.onload = () => {
+            const userId = tg.initDataUnsafe?.user?.id;
+            if (!userId) {
+                showAccessDenied({ name: 'Доступ ограничен', photo: '', notTelegram: true });
+                return; 
+            }
+            loadData(userId);
+        };
+        
+        function updateHistoryLimit() {
             const select = document.getElementById('history-limit');
             const label = document.getElementById('history-label');
             const val = select.value;
-
             historyLimit = val === 'all' ? Infinity : parseInt(val);
             label.innerText = select.options[select.selectedIndex].text;
-
             filterData();
         }
 
@@ -480,7 +489,7 @@ function updateHistoryLimit() {
             `).join('');
         }
 
-function renderHistory(list) {
+        function renderHistory(list) {
             const container = document.getElementById('u-history');
             if (!list || list.length === 0) { container.innerHTML = '<p class="text-zinc-700 text-xs italic text-center py-4">Нет данных</p>'; return; }
             
@@ -499,7 +508,7 @@ function renderHistory(list) {
                 </div>
             `).join('');
             
-            if (list.length > displayList.length) {
+             if (list.length > displayList.length) {
                 container.innerHTML += `<div class="text-center py-2"><p class="text-[9px] text-zinc-700 italic">Показано ${displayList.length} из ${list.length}</p></div>`;
             }
         }
@@ -580,39 +589,32 @@ function renderHistory(list) {
                 return;
             }
 
-            // --- TYPE: WORKOUTS (DONUT CHART - Muscle Groups) ---
             if (type === 'workouts') {
-                // Calculate distribution
                 const distribution = {};
                 let total = 0;
                 
-                // Use all available data for the chart, not just last 5
                 data.forEach(d => {
                     const group = d.group || 'Другое';
                     distribution[group] = (distribution[group] || 0) + 1;
                     total++;
                 });
 
-                // Convert to array and sort
                 const segments = Object.entries(distribution)
                     .map(([label, value]) => ({ label, value }))
                     .sort((a, b) => b.value - a.value);
 
-                // Colors
                 const colors = ['#CCFF00', '#3b82f6', '#f97316', '#ef4444', '#a855f7'];
 
                 let svgContent = '';
                 let legendContent = '';
                 let cumulativePercent = 0;
 
-                // Create SVG segments
                 segments.forEach((seg, i) => {
                     const percent = seg.value / total;
                     const startPercent = cumulativePercent;
                     cumulativePercent += percent;
                     const color = colors[i % colors.length];
 
-                    // Coordinates
                     const getCoords = (p) => {
                         const x = Math.cos(2 * Math.PI * p);
                         const y = Math.sin(2 * Math.PI * p);
@@ -639,7 +641,6 @@ function renderHistory(list) {
                     `;
                 });
 
-                // If only 1 segment, draw full circle
                 if(segments.length === 1) {
                      svgContent = `<circle cx="0" cy="0" r="1" fill="${colors[0]}" stroke="#121212" stroke-width="0.05" class="donut-segment"></circle>`;
                 }
@@ -663,11 +664,7 @@ function renderHistory(list) {
                 `;
                 container.innerHTML = html;
             } 
-            // --- TYPE: WATER & TIME (LINE CHART) ---
             else {
-                // For line charts, use slice to keep readable if too many points, 
-                // but user asked to limit history LIST, not charts. 
-                // However, line charts get messy with 50 points. Let's keep last 8 for visual clarity.
                 const chartData = data.slice(0, 8).reverse();
 
                 let accentColor = '#3b82f6'; 
@@ -681,11 +678,9 @@ function renderHistory(list) {
                     accentColor = '#f97316';
                 }
 
-                // Process data for SVG
                 const values = chartData.map(d => type === 'water' ? d.water / 1000 : d.time);
-                const maxVal = Math.max(...values, 1) * 1.1; // Add 10% headroom
+                const maxVal = Math.max(...values, 1) * 1.1; 
                 
-                // SVG ViewBox
                 const width = 300;
                 const height = 150;
                 const paddingX = 20;
@@ -699,14 +694,11 @@ function renderHistory(list) {
                     return { x, y, val, label: chartData[i].date.split('.')[0] };
                 });
 
-                // Generate Path D
                 let pathD = `M ${points[0].x} ${points[0].y}`;
                 points.forEach((p, i) => { if(i>0) pathD += ` L ${p.x} ${p.y}`; });
                 
-                // Generate Area D
                 let areaD = `${pathD} L ${points[points.length-1].x} ${height - paddingY} L ${points[0].x} ${height - paddingY} Z`;
 
-                // Generate Grid Lines (3 levels)
                 const gridLines = [0.25, 0.5, 0.75].map(pct => {
                     const y = height - paddingY - (pct * usableHeight);
                     return `<line x1="${paddingX}" y1="${y}" x2="${width-paddingX}" y2="${y}" class="chart-grid-line" />`;
@@ -723,18 +715,14 @@ function renderHistory(list) {
                         </defs>
 
                         ${gridLines}
-                        
                         <path d="${areaD}" fill="url(#grad-${type})" class="chart-area-path" />
-                        
                         <path d="${pathD}" class="chart-line-path" stroke="${accentColor}" />
                         
                         ${points.map((p, i) => `
                             <circle cx="${p.x}" cy="${p.y}" class="chart-point" style="stroke:${accentColor}; animation-delay: ${i*50}ms" />
-                            
                             <text x="${p.x}" y="${p.y - 12}" class="chart-label-val" style="animation-delay: ${i*50 + 200}ms">
                                 ${p.val}${unit}
                             </text>
-                            
                             <text x="${p.x}" y="${height - 5}" class="chart-label-date" style="animation-delay: ${i*50}ms">
                                 ${p.label}
                             </text>
