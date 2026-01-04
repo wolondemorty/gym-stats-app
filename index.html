@@ -63,15 +63,13 @@
         .chart-label-val { font-size: 10px; font-weight: 800; fill: #fff; text-anchor: middle; opacity: 0; animation: slideUpFade 0.4s ease-out forwards; }
         .chart-label-date { font-size: 9px; font-weight: 600; fill: #666; text-anchor: middle; opacity: 0; animation: fadeIn 0.4s ease-out forwards; }
         
-        /* Donut Chart Specifics */
-        .donut-segment { transform-origin: center; animation: spinSeg 0.8s ease-out forwards; }
-        .legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        /* Calendar / Heatmap Specifics */
+        .cal-day { animation: popIn 0.3s backwards; }
 
         @keyframes drawLine { to { stroke-dashoffset: 0; } }
         @keyframes fadeInArea { from { opacity: 0; } to { opacity: 0.25; } }
         @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes slideUpFade { from { transform: translateY(5px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes spinSeg { from { stroke-dasharray: 0 100; } } 
     </style>
 </head>
 <body class="select-none overflow-x-hidden">
@@ -179,7 +177,7 @@
                 <div id="card-workouts" onclick="toggleCard('workouts')" class="bento-card p-4 cursor-pointer group col-span-1 h-fit">
                     <div class="flex justify-between items-start">
                         <div>
-                            <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Группы мышц</span>
+                            <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Календарь</span>
                             <p id="u-count" class="text-3xl font-black italic tracking-tighter mt-1">0</p>
                         </div>
                         <div class="opacity-30 group-hover:opacity-100 transition-opacity arrow-icon">
@@ -590,79 +588,62 @@
             }
 
             if (type === 'workouts') {
-                const distribution = {};
-                let total = 0;
-                
+                // 1. Подготовка данных для календаря
+                const activeDates = new Set();
                 data.forEach(d => {
-                    const group = d.group || 'Другое';
-                    distribution[group] = (distribution[group] || 0) + 1;
-                    total++;
+                    // Нормализация даты. Предполагаем формат "DD.MM.YYYY" или "DD.MM"
+                    let dateStr = d.date.split(' ')[0];
+                    if(dateStr.length < 6) { 
+                       const yr = new Date().getFullYear();
+                       dateStr = `${dateStr}.${yr}`;
+                    }
+                    activeDates.add(dateStr);
                 });
 
-                const segments = Object.entries(distribution)
-                    .map(([label, value]) => ({ label, value }))
-                    .sort((a, b) => b.value - a.value);
+                // 2. Генерация последних 35 дней
+                const daysHtml = [];
+                const daysToShow = 35; 
+                const today = new Date();
 
-                const colors = ['#CCFF00', '#3b82f6', '#f97316', '#ef4444', '#a855f7'];
+                for (let i = daysToShow - 1; i >= 0; i--) {
+                    const d = new Date();
+                    d.setDate(today.getDate() - i);
 
-                let svgContent = '';
-                let legendContent = '';
-                let cumulativePercent = 0;
-
-                segments.forEach((seg, i) => {
-                    const percent = seg.value / total;
-                    const startPercent = cumulativePercent;
-                    cumulativePercent += percent;
-                    const color = colors[i % colors.length];
-
-                    const getCoords = (p) => {
-                        const x = Math.cos(2 * Math.PI * p);
-                        const y = Math.sin(2 * Math.PI * p);
-                        return { x, y };
-                    };
-
-                    const start = getCoords(startPercent);
-                    const end = getCoords(cumulativePercent);
-                    const largeArcFlag = percent > 0.5 ? 1 : 0;
-
-                    const pathData = [
-                        `M ${start.x} ${start.y}`,
-                        `A 1 1 0 ${largeArcFlag} 1 ${end.x} ${end.y}`,
-                        `L 0 0`,
-                    ].join(' ');
-
-                    svgContent += `<path d="${pathData}" fill="${color}" stroke="#121212" stroke-width="0.05" class="donut-segment" style="animation-delay:${i*100}ms"></path>`;
+                    const day = String(d.getDate()).padStart(2, '0');
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    const year = d.getFullYear();
+                    const formatted = `${day}.${month}.${year}`;
                     
-                    legendContent += `
-                        <div class="flex items-center justify-between text-[10px] mb-1">
-                            <div class="flex items-center"><span class="legend-dot" style="background:${color}"></span><span class="text-zinc-400 font-bold">${seg.label}</span></div>
-                            <span class="font-bold text-white ml-2">${Math.round(percent*100)}%</span>
-                        </div>
-                    `;
-                });
+                    // Упрощенная проверка совпадения (полная дата или без года)
+                    const isActive = activeDates.has(formatted) || activeDates.has(`${day}.${month}`);
 
-                if(segments.length === 1) {
-                     svgContent = `<circle cx="0" cy="0" r="1" fill="${colors[0]}" stroke="#121212" stroke-width="0.05" class="donut-segment"></circle>`;
+                    const colorClass = isActive ? 'bg-[#CCFF00] shadow-[0_0_8px_rgba(204,255,0,0.4)]' : 'bg-[#27272a]';
+                    const textClass = isActive ? 'text-black font-black' : 'text-zinc-600';
+                    const isToday = i === 0;
+                    const border = isToday ? 'border border-white/50' : 'border border-transparent';
+
+                    daysHtml.push(`
+                        <div class="cal-day flex flex-col items-center justify-center w-full aspect-square rounded-md ${colorClass} ${border}" style="animation-delay: ${i*10}ms">
+                            <span class="text-[8px] ${textClass}">${parseInt(day)}</span>
+                        </div>
+                    `);
                 }
 
-                const html = `
-                    <div class="flex items-center justify-between px-4 pt-4 pb-2 h-full">
-                        <div class="w-32 h-32 relative flex-shrink-0">
-                            <svg viewBox="-1 -1 2 2" style="transform: rotate(-90deg);" class="w-full h-full overflow-visible">
-                                ${svgContent}
-                                <circle cx="0" cy="0" r="0.6" fill="#121212"></circle>
-                            </svg>
-                            <div class="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
-                                <span class="text-2xl font-black text-white italic tracking-tighter">${total}</span>
-                                <span class="text-[8px] text-zinc-500 uppercase font-bold">Всего</span>
-                            </div>
+                container.innerHTML = `
+                    <div class="p-4 pt-2">
+                        <div class="flex justify-between items-end mb-3">
+                             <span class="text-[9px] text-zinc-500 font-bold uppercase">Последние 5 недель</span>
+                             <div class="flex gap-2">
+                                <div class="flex items-center gap-1"><div class="w-1.5 h-1.5 rounded bg-[#27272a]"></div><span class="text-[8px] text-zinc-500">Отдых</span></div>
+                                <div class="flex items-center gap-1"><div class="w-1.5 h-1.5 rounded bg-[#CCFF00]"></div><span class="text-[8px] text-zinc-500">Зал</span></div>
+                             </div>
                         </div>
-                        <div class="flex-1 pl-6 h-32 overflow-y-auto no-scrollbar flex flex-col justify-center">
-                            ${legendContent}
+                        <div class="grid grid-cols-7 gap-1.5">
+                            ${daysHtml.join('')}
                         </div>
                     </div>
                 `;
-                container.innerHTML = html;
+                return;
             } 
             else {
                 const chartData = data.slice(0, 8).reverse();
