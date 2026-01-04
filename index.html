@@ -47,7 +47,6 @@
         }
         .arrow-icon { transition: transform 0.4s ease-in-out; }
 
-        /* SVG Chart Styles */
         .svg-container { width: 100%; height: 100%; overflow: visible; }
         .chart-grid-line { stroke: #333; stroke-width: 1; stroke-dasharray: 4 4; opacity: 0.5; }
         .chart-line-path {
@@ -63,7 +62,6 @@
         .chart-label-val { font-size: 10px; font-weight: 800; fill: #fff; text-anchor: middle; opacity: 0; animation: slideUpFade 0.4s ease-out forwards; }
         .chart-label-date { font-size: 9px; font-weight: 600; fill: #666; text-anchor: middle; opacity: 0; animation: fadeIn 0.4s ease-out forwards; }
         
-        /* Calendar / Heatmap Specifics */
         .cal-day { animation: popIn 0.3s backwards; }
 
         @keyframes drawLine { to { stroke-dashoffset: 0; } }
@@ -587,8 +585,7 @@
                 return;
             }
 
-if (type === 'workouts') {
-                // 1. Подготовка данных для календаря (Universal Date Parser)
+            if (type === 'workouts') {
                 const activeDates = new Set();
                 
                 data.forEach(d => {
@@ -597,8 +594,6 @@ if (type === 'workouts') {
                     let rawDate = String(d.date).trim();
                     let day, month, year;
 
-                    // ПРОВЕРКА 1: Это формат ISO? (Например: 2025-12-05T...)
-                    // Если строка начинается с 4 цифр подряд, значит это Год
                     if (/^\d{4}/.test(rawDate)) {
                         const parts = rawDate.match(/(\d+)/g); 
                         if (parts && parts.length >= 3) {
@@ -607,32 +602,25 @@ if (type === 'workouts') {
                             day = parts[2];
                         }
                     } 
-                    // ПРОВЕРКА 2: Это обычный формат? (Например: 05.12.2025 или 5.12)
                     else {
                         const parts = rawDate.match(/(\d+)/g);
                         if (parts && parts.length >= 2) {
                             day = parts[0];
                             month = parts[1];
-                            // Если года нет, берем текущий. Если есть - используем его.
                             year = parts[2] ? parts[2] : new Date().getFullYear();
                         }
                     }
 
-                    // Если удалось распарсить дату
                     if (day && month && year) {
-                        // Исправляем короткий год (25 -> 2025)
                         if (String(year).length === 2) year = '20' + year;
                         
-                        // Добавляем нолики (5 -> 05)
                         day = String(day).padStart(2, '0');
                         month = String(month).padStart(2, '0');
                         
-                        // Сохраняем в едином формате для сверки: DD.MM.YYYY
                         activeDates.add(`${day}.${month}.${year}`);
                     }
                 });
 
-                // 2. Генерация последних 35 дней
                 const daysHtml = [];
                 const daysToShow = 35; 
                 const today = new Date();
@@ -645,52 +633,6 @@ if (type === 'workouts') {
                     const month = String(d.getMonth() + 1).padStart(2, '0');
                     const year = d.getFullYear();
                     
-                    // Ключ для поиска в Set
-                    const formatted = `${day}.${month}.${year}`;
-                    
-                    const isActive = activeDates.has(formatted);
-
-                    const colorClass = isActive ? 'bg-[#CCFF00] shadow-[0_0_8px_rgba(204,255,0,0.4)]' : 'bg-[#27272a]';
-                    const textClass = isActive ? 'text-black font-black' : 'text-zinc-600';
-                    const isToday = i === 0;
-                    const border = isToday ? 'border border-white/50' : 'border border-transparent';
-
-                    daysHtml.push(`
-                        <div class="cal-day flex flex-col items-center justify-center w-full aspect-square rounded-md ${colorClass} ${border}" style="animation-delay: ${i*10}ms">
-                            <span class="text-[8px] ${textClass}">${parseInt(day)}</span>
-                        </div>
-                    `);
-                }
-
-                container.innerHTML = `
-                    <div class="p-4 pt-2">
-                        <div class="flex justify-between items-end mb-3">
-                             <span class="text-[9px] text-zinc-500 font-bold uppercase">Последние 5 недель</span>
-                             <div class="flex gap-2">
-                                <div class="flex items-center gap-1"><div class="w-1.5 h-1.5 rounded bg-[#27272a]"></div><span class="text-[8px] text-zinc-500">Отдых</span></div>
-                                <div class="flex items-center gap-1"><div class="w-1.5 h-1.5 rounded bg-[#CCFF00]"></div><span class="text-[8px] text-zinc-500">Зал</span></div>
-                             </div>
-                        </div>
-                        <div class="grid grid-cols-7 gap-1.5">
-                            ${daysHtml.join('')}
-                        </div>
-                    </div>
-                `;
-                return;
-            }
-
-                // 2. Генерация последних 35 дней
-                const daysHtml = [];
-                const daysToShow = 35; 
-                const today = new Date();
-
-                for (let i = daysToShow - 1; i >= 0; i--) {
-                    const d = new Date();
-                    d.setDate(today.getDate() - i);
-
-                    const day = String(d.getDate()).padStart(2, '0');
-                    const month = String(d.getMonth() + 1).padStart(2, '0');
-                    const year = d.getFullYear();
                     const formatted = `${day}.${month}.${year}`;
                     
                     const isActive = activeDates.has(formatted);
