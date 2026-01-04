@@ -587,37 +587,26 @@
                     if (!d.date) return;
                     
                     let raw = String(d.date).trim();
-                    if (raw.includes(' ')) {
-                        raw = raw.split(' ')[0];
-                    }
-                    if (raw.includes('T')) {
-                        raw = raw.split('T')[0];
-                    }
-
-                    let day, month, year;
+                    let digits = raw.match(/\d+/g); 
                     
-                    let partsDot = raw.split('.');
-                    if (partsDot.length === 3) {
-                        day = partsDot[0];
-                        month = partsDot[1];
-                        year = partsDot[2];
-                    } else {
-                        let partsDash = raw.split('-');
-                        if (partsDash.length === 3) {
-                            if (partsDash[0].length === 4) {
-                                year = partsDash[0]; month = partsDash[1]; day = partsDash[2];
-                            } else {
-                                day = partsDash[0]; month = partsDash[1]; year = partsDash[2];
-                            }
-                        }
-                    }
+                    if (digits && digits.length >= 3) {
+                        let day, month, year;
 
-                    if (day && month && year) {
-                        const dStr = String(day).padStart(2, '0');
-                        const mStr = String(month).padStart(2, '0');
+                        if (digits[0].length === 4) {
+                            year = digits[0];
+                            month = digits[1];
+                            day = digits[2];
+                        } else {
+                            day = digits[0];
+                            month = digits[1];
+                            year = digits[2];
+                        }
+
+                        let dStr = String(day).padStart(2, '0');
+                        let mStr = String(month).padStart(2, '0');
                         let yStr = String(year);
                         if (yStr.length === 2) yStr = '20' + yStr;
-                        
+
                         activeDates.add(`${dStr}.${mStr}.${yStr}`);
                     }
                 });
