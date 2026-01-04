@@ -589,25 +589,21 @@
                 const activeDates = new Set();
                 data.forEach(d => {
                     if (!d.date) return;
-                    let rawDate = String(d.date).trim();
-                    let dateKey = "";
-
-                    if (rawDate.includes('T')) {
-                        let isoDate = rawDate.split('T')[0]; 
-                        let parts = isoDate.split('-');
-                        if(parts.length >= 3) {
-                            dateKey = `${parts[2]}.${parts[1]}.${parts[0]}`; 
-                        }
-                    } else {
-                        let parts = rawDate.match(/(\d+)/g);
-                        if (parts && parts.length >= 3) {
-                             let day = parts[0].padStart(2, '0');
-                             let month = parts[1].padStart(2, '0');
-                             let year = parts[2].length === 2 ? '20' + parts[2] : parts[2];
-                             dateKey = `${day}.${month}.${year}`;
-                        }
+                    
+                    let raw = String(d.date).trim();
+                    let match = raw.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})/);
+                    
+                    if (match) {
+                        let day = match[1].padStart(2, '0');
+                        let month = match[2].padStart(2, '0');
+                        let year = match[3];
+                        if (year.length === 2) year = '20' + year;
+                        activeDates.add(`${day}.${month}.${year}`);
+                    } 
+                    else if (raw.match(/^\d{4}-\d{2}-\d{2}/)) {
+                        let parts = raw.split(/[T ]/)[0].split('-');
+                        activeDates.add(`${parts[2]}.${parts[1]}.${parts[0]}`);
                     }
-                    if(dateKey) activeDates.add(dateKey);
                 });
 
                 const daysHtml = [];
@@ -623,7 +619,6 @@
                     const year = d.getFullYear();
                     
                     const formatted = `${day}.${month}.${year}`;
-                    
                     const isActive = activeDates.has(formatted);
 
                     const colorClass = isActive ? 'bg-[#CCFF00] shadow-[0_0_8px_rgba(204,255,0,0.4)]' : 'bg-[#27272a]';
