@@ -47,6 +47,7 @@
         }
         .arrow-icon { transition: transform 0.4s ease-in-out; }
 
+        /* SVG Chart Styles */
         .svg-container { width: 100%; height: 100%; overflow: visible; }
         .chart-grid-line { stroke: #333; stroke-width: 1; stroke-dasharray: 4 4; opacity: 0.5; }
         .chart-line-path {
@@ -62,6 +63,7 @@
         .chart-label-val { font-size: 10px; font-weight: 800; fill: #fff; text-anchor: middle; opacity: 0; animation: slideUpFade 0.4s ease-out forwards; }
         .chart-label-date { font-size: 9px; font-weight: 600; fill: #666; text-anchor: middle; opacity: 0; animation: fadeIn 0.4s ease-out forwards; }
         
+        /* Calendar / Heatmap Specifics */
         .cal-day { animation: popIn 0.3s backwards; }
 
         @keyframes drawLine { to { stroke-dashoffset: 0; } }
@@ -575,97 +577,150 @@
         }
 
         function renderInlineChart(type, container) {
-    const filter = document.getElementById('prog-filter').value;
-    if (!globalData || !globalData.history) return;
-    
-    let data = (filter === 'all') 
-        ? globalData.history 
-        : globalData.history.filter(h => h.program === filter);
-
-    if (type === 'workouts') {
-        const activeDates = new Set();
-        
-        data.forEach(d => {
-            if (!d.date) return;
+            const filter = document.getElementById('prog-filter').value;
+            if(!globalData || !globalData.history) return;
             
-            try {
-                let dateObj;
-                
-                // Проверяем, не является ли дата уже объектом Date
-                if (d.date instanceof Date) {
-                    dateObj = d.date;
-                } else {
-                    // Если это строка, пробуем разные способы парсинга
-                    const s = String(d.date);
-                    const parts = s.match(/\d+/g);
-                    
-                    if (parts && parts.length >= 3) {
-                        // Формат ГГГГ-ММ-ДД
-                        if (parts[0].length === 4) {
-                            dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
-                        } 
-                        // Формат ДД.ММ.ГГГГ
-                        else {
-                            dateObj = new Date(parts[2], parts[1] - 1, parts[0]);
-                        }
-                    }
-                }
-
-                if (dateObj && !isNaN(dateObj.getTime())) {
-                    const day = String(dateObj.getDate()).padStart(2, '0');
-                    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-                    const year = dateObj.getFullYear();
-                    activeDates.add(`${day}.${month}.${year}`);
-                }
-            } catch (e) {
-                console.error("Ошибка парсинга даты:", d.date);
+            let data = (filter === 'all') ? globalData.history : globalData.history.filter(h => h.program === filter);
+            
+            if (data.length === 0) {
+                container.innerHTML = '<p class="text-zinc-600 text-xs text-center py-8">Нет данных</p>';
+                return;
             }
-        });
 
-        const daysHtml = [];
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Обнуляем время для корректного сравнения
+            if (type === 'workouts') {
+                // 1. Подготовка данных для календаря (с "умным" парсером дат)
+                const activeDates = new Set();
+                data.forEach(d => {
+                    if (!d.date) return;
+                    // Убираем время, если оно есть
+                    let rawDate = String(d.date).trim().split(' ')[0];
+                    // Разбиваем дату на части по любым разделителям (., /, -)
+                    const parts = rawDate.match(/(\d+)/g);
 
-        // Генерируем сетку на 35 дней
-        for (let i = 34; i >= 0; i--) {
-            const d = new Date();
-            d.setDate(today.getDate() - i);
-            d.setHours(0, 0, 0, 0);
-            
-            const dNum = String(d.getDate()).padStart(2, '0');
-            const mNum = String(d.getMonth() + 1).padStart(2, '0');
-            const yNum = d.getFullYear();
-            
-            const formatted = `${dNum}.${mNum}.${yNum}`;
-            const isActive = activeDates.has(formatted);
-            const isToday = d.getTime() === today.getTime();
+                    if (parts && parts.length >= 2) {
+                        const day = parts[0].padStart(2, '0');
+                        const month = parts[1].padStart(2, '0');
+                        // Если года нет, берем текущий. Если есть (24 или 2024), обрабатываем
+                        let year = parts[2] ? parts[2] : new Date().getFullYear();
+                        if (String(year).length === 2) year = '20' + year;
 
-            daysHtml.push(`
-                <div class="cal-day flex flex-col items-center justify-center aspect-square rounded-md 
-                    ${isActive ? 'bg-[#CCFF00] shadow-[0_0_12px_rgba(204,255,0,0.4)]' : 'bg-[#27272a]'} 
-                    ${isToday ? 'border border-white/50' : 'border border-transparent'}"
-                    style="animation-delay: ${(34-i)*10}ms">
-                    <span class="text-[8px] ${isActive ? 'text-black font-black' : 'text-zinc-600'}">${parseInt(dNum)}</span>
-                </div>
-            `);
+                        activeDates.add(`${day}.${month}.${year}`);
+                    }
+                });
+
+                // 2. Генерация последних 35 дней
+                const daysHtml = [];
+                const daysToShow = 35; 
+                const today = new Date();
+
+                for (let i = daysToShow - 1; i >= 0; i--) {
+                    const d = new Date();
+                    d.setDate(today.getDate() - i);
+
+                    const day = String(d.getDate()).padStart(2, '0');
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    const year = d.getFullYear();
+                    const formatted = `${day}.${month}.${year}`;
+                    
+                    const isActive = activeDates.has(formatted);
+
+                    const colorClass = isActive ? 'bg-[#CCFF00] shadow-[0_0_8px_rgba(204,255,0,0.4)]' : 'bg-[#27272a]';
+                    const textClass = isActive ? 'text-black font-black' : 'text-zinc-600';
+                    const isToday = i === 0;
+                    const border = isToday ? 'border border-white/50' : 'border border-transparent';
+
+                    daysHtml.push(`
+                        <div class="cal-day flex flex-col items-center justify-center w-full aspect-square rounded-md ${colorClass} ${border}" style="animation-delay: ${i*10}ms">
+                            <span class="text-[8px] ${textClass}">${parseInt(day)}</span>
+                        </div>
+                    `);
+                }
+
+                container.innerHTML = `
+                    <div class="p-4 pt-2">
+                        <div class="flex justify-between items-end mb-3">
+                             <span class="text-[9px] text-zinc-500 font-bold uppercase">Последние 5 недель</span>
+                             <div class="flex gap-2">
+                                <div class="flex items-center gap-1"><div class="w-1.5 h-1.5 rounded bg-[#27272a]"></div><span class="text-[8px] text-zinc-500">Отдых</span></div>
+                                <div class="flex items-center gap-1"><div class="w-1.5 h-1.5 rounded bg-[#CCFF00]"></div><span class="text-[8px] text-zinc-500">Зал</span></div>
+                             </div>
+                        </div>
+                        <div class="grid grid-cols-7 gap-1.5">
+                            ${daysHtml.join('')}
+                        </div>
+                    </div>
+                `;
+                return;
+            } 
+            else {
+                const chartData = data.slice(0, 8).reverse();
+
+                let accentColor = '#3b82f6'; 
+                let unit = '';
+
+                if (type === 'water') {
+                    unit = 'л';
+                    accentColor = '#06b6d4'; 
+                } else {
+                    unit = 'м';
+                    accentColor = '#f97316';
+                }
+
+                const values = chartData.map(d => type === 'water' ? d.water / 1000 : d.time);
+                const maxVal = Math.max(...values, 1) * 1.1; 
+                
+                const width = 300;
+                const height = 150;
+                const paddingX = 20;
+                const paddingY = 20;
+                const usableWidth = width - (paddingX * 2);
+                const usableHeight = height - (paddingY * 2);
+
+                const points = values.map((val, i) => {
+                    const x = paddingX + (i / (values.length - 1 || 1)) * usableWidth;
+                    const y = height - paddingY - ((val / maxVal) * usableHeight);
+                    return { x, y, val, label: chartData[i].date.split('.')[0] };
+                });
+
+                let pathD = `M ${points[0].x} ${points[0].y}`;
+                points.forEach((p, i) => { if(i>0) pathD += ` L ${p.x} ${p.y}`; });
+                
+                let areaD = `${pathD} L ${points[points.length-1].x} ${height - paddingY} L ${points[0].x} ${height - paddingY} Z`;
+
+                const gridLines = [0.25, 0.5, 0.75].map(pct => {
+                    const y = height - paddingY - (pct * usableHeight);
+                    return `<line x1="${paddingX}" y1="${y}" x2="${width-paddingX}" y2="${y}" class="chart-grid-line" />`;
+                }).join('');
+
+                let svgHtml = `
+                <div class="svg-container pt-4 pb-2">
+                    <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="width:100%; height:100%;">
+                        <defs>
+                            <linearGradient id="grad-${type}" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" style="stop-color:${accentColor};stop-opacity:0.3" />
+                                <stop offset="100%" style="stop-color:${accentColor};stop-opacity:0" />
+                            </linearGradient>
+                        </defs>
+
+                        ${gridLines}
+                        <path d="${areaD}" fill="url(#grad-${type})" class="chart-area-path" />
+                        <path d="${pathD}" class="chart-line-path" stroke="${accentColor}" />
+                        
+                        ${points.map((p, i) => `
+                            <circle cx="${p.x}" cy="${p.y}" class="chart-point" style="stroke:${accentColor}; animation-delay: ${i*50}ms" />
+                            <text x="${p.x}" y="${p.y - 12}" class="chart-label-val" style="animation-delay: ${i*50 + 200}ms">
+                                ${p.val}${unit}
+                            </text>
+                            <text x="${p.x}" y="${height - 5}" class="chart-label-date" style="animation-delay: ${i*50}ms">
+                                ${p.label}
+                            </text>
+                        `).join('')}
+                    </svg>
+                </div>`;
+                
+                container.innerHTML = svgHtml;
+            }
         }
-
-        container.innerHTML = `
-            <div class="p-4 pt-2">
-                <div class="flex justify-between items-center mb-3">
-                     <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">Активность (5 нед)</span>
-                     <div class="flex gap-2">
-                        <div class="flex items-center gap-1"><div class="w-1.5 h-1.5 rounded-full bg-[#27272a]"></div><span class="text-[8px] text-zinc-500 uppercase">ОТДЫХ</span></div>
-                        <div class="flex items-center gap-1"><div class="w-1.5 h-1.5 rounded-full bg-[#CCFF00]"></div><span class="text-[8px] text-zinc-500 uppercase">ЗАЛ</span></div>
-                     </div>
-                </div>
-                <div class="grid grid-cols-7 gap-1.5">
-                    ${daysHtml.join('')}
-                </div>
-            </div>
-        `;
-    }
-}
 
         function deleteItem(rowIndex, btn, actionType) {
             if(!confirm("Удалить запись?")) return;
