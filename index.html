@@ -321,11 +321,7 @@ function updateHistoryLimit() {
             const label = document.getElementById('history-label');
             const val = select.value;
 
-            // Логика фильтрации
             historyLimit = val === 'all' ? Infinity : parseInt(val);
-
-            // Обновляем видимый текст, чтобы он совпадал с выбранным
-            // Берем текст из выбранной опции (select.options[select.selectedIndex].text)
             label.innerText = select.options[select.selectedIndex].text;
 
             filterData();
