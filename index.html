@@ -587,38 +587,27 @@
 
             if (type === 'workouts') {
                 const activeDates = new Set();
-                
                 data.forEach(d => {
                     if (!d.date) return;
-                    
                     let rawDate = String(d.date).trim();
-                    let day, month, year;
+                    let dateKey = "";
 
-                    if (/^\d{4}/.test(rawDate)) {
-                        const parts = rawDate.match(/(\d+)/g); 
+                    if (rawDate.includes('T')) {
+                        let isoDate = rawDate.split('T')[0]; 
+                        let parts = isoDate.split('-');
+                        if(parts.length >= 3) {
+                            dateKey = `${parts[2]}.${parts[1]}.${parts[0]}`; 
+                        }
+                    } else {
+                        let parts = rawDate.match(/(\d+)/g);
                         if (parts && parts.length >= 3) {
-                            year = parts[0];
-                            month = parts[1];
-                            day = parts[2];
-                        }
-                    } 
-                    else {
-                        const parts = rawDate.match(/(\d+)/g);
-                        if (parts && parts.length >= 2) {
-                            day = parts[0];
-                            month = parts[1];
-                            year = parts[2] ? parts[2] : new Date().getFullYear();
+                             let day = parts[0].padStart(2, '0');
+                             let month = parts[1].padStart(2, '0');
+                             let year = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+                             dateKey = `${day}.${month}.${year}`;
                         }
                     }
-
-                    if (day && month && year) {
-                        if (String(year).length === 2) year = '20' + year;
-                        
-                        day = String(day).padStart(2, '0');
-                        month = String(month).padStart(2, '0');
-                        
-                        activeDates.add(`${day}.${month}.${year}`);
-                    }
+                    if(dateKey) activeDates.add(dateKey);
                 });
 
                 const daysHtml = [];
