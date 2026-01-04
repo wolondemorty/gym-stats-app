@@ -227,9 +227,19 @@
             </div>
             <div id="u-records" class="space-y-3 mb-8"></div>
             <div class="flex items-center justify-between mb-3 px-1">
-                <h2 class="text-xs font-bold text-white uppercase tracking-widest">
-                    История <span class="text-zinc-600 ml-1 font-medium normal-case">последних 5</span>
-                </h2>
+                <div class="flex items-center gap-2">
+                    <h2 class="text-xs font-bold text-white uppercase tracking-widest">История</h2>
+                    <div class="relative">
+                        <select id="history-limit" onchange="updateHistoryLimit()" class="appearance-none bg-zinc-900 border border-zinc-800 text-zinc-600 hover:text-zinc-400 text-[9px] font-bold uppercase rounded-md px-2 py-0.5 outline-none focus:border-zinc-700 transition-colors cursor-pointer text-center">
+                            <option value="5">Посл. 5</option>
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="30">30</option>
+                            <option value="100">100</option>
+                            <option value="all">Все</option>
+                        </select>
+                    </div>
+                </div>
                 <button onclick="openModal('modal-workout')" class="edit-tool bg-zinc-800 text-[#CCFF00] px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase border border-zinc-700">+ Вручную</button>
             </div>
             <div id="u-history" class="space-y-2 pb-4"></div>
@@ -298,6 +308,13 @@
         let globalData = null;
         let isEditMode = false;
         let currentMacros = null;
+        let historyLimit = 5; 
+
+        function updateHistoryLimit() {
+            const val = document.getElementById('history-limit').value;
+            historyLimit = val === 'all' ? Infinity : parseInt(val);
+            filterData(); // Перерисовываем список
+        }
 
         window.onload = () => {
             const userId = tg.initDataUnsafe?.user?.id;
@@ -461,12 +478,11 @@
             `).join('');
         }
 
-        function renderHistory(list) {
+function renderHistory(list) {
             const container = document.getElementById('u-history');
             if (!list || list.length === 0) { container.innerHTML = '<p class="text-zinc-700 text-xs italic text-center py-4">Нет данных</p>'; return; }
             
-            // Limit to last 5 entries
-            const displayList = list.slice(0, 5);
+            const displayList = (historyLimit === Infinity) ? list : list.slice(0, historyLimit);
 
             container.innerHTML = displayList.map(h => `
                 <div class="flex items-center justify-between py-3 border-b border-zinc-900 last:border-0 group relative">
@@ -480,6 +496,10 @@
                     </div>
                 </div>
             `).join('');
+            
+            if (list.length > displayList.length) {
+                container.innerHTML += `<div class="text-center py-2"><p class="text-[9px] text-zinc-700 italic">Показано ${displayList.length} из ${list.length}</p></div>`;
+            }
         }
 
         function filterData() {
