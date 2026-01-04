@@ -177,7 +177,7 @@
                 <div id="card-workouts" onclick="toggleCard('workouts')" class="bento-card p-4 cursor-pointer group col-span-1 h-fit">
                     <div class="flex justify-between items-start">
                         <div>
-                            <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Календарь</span>
+                            <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Тренировки</span>
                             <p id="u-count" class="text-3xl font-black italic tracking-tighter mt-1">0</p>
                         </div>
                         <div class="opacity-30 group-hover:opacity-100 transition-opacity arrow-icon">
@@ -588,31 +588,22 @@
             }
 
             if (type === 'workouts') {
-if (type === 'workouts') {
-                // 1. Подготовка данных: "Умный парсер" дат
+                // 1. Подготовка данных для календаря (с "умным" парсером дат)
                 const activeDates = new Set();
-                
                 data.forEach(d => {
                     if (!d.date) return;
-                    
-                    // Убираем время, если оно есть (берем часть до пробела)
+                    // Убираем время, если оно есть
                     let rawDate = String(d.date).trim().split(' ')[0];
-                    
-                    // Разбиваем дату на цифры (день, месяц, год) по любым разделителям (точка, слеш, тире)
+                    // Разбиваем дату на части по любым разделителям (., /, -)
                     const parts = rawDate.match(/(\d+)/g);
 
                     if (parts && parts.length >= 2) {
-                        // Принудительно добавляем нолик в начале, если цифра одна (1 -> 01)
                         const day = parts[0].padStart(2, '0');
                         const month = parts[1].padStart(2, '0');
-                        
-                        // Если года нет в дате, берем текущий. Если есть - используем его.
+                        // Если года нет, берем текущий. Если есть (24 или 2024), обрабатываем
                         let year = parts[2] ? parts[2] : new Date().getFullYear();
-                        
-                        // Если год короткий ("24"), делаем полный ("2024")
                         if (String(year).length === 2) year = '20' + year;
 
-                        // Сохраняем в эталонном формате DD.MM.YYYY
                         activeDates.add(`${day}.${month}.${year}`);
                     }
                 });
@@ -629,59 +620,9 @@ if (type === 'workouts') {
                     const day = String(d.getDate()).padStart(2, '0');
                     const month = String(d.getMonth() + 1).padStart(2, '0');
                     const year = d.getFullYear();
-                    
-                    // Эталонный формат для сверки
                     const formatted = `${day}.${month}.${year}`;
                     
-                    // Проверяем, есть ли эта дата в нашем списке
                     const isActive = activeDates.has(formatted);
-
-                    const colorClass = isActive ? 'bg-[#CCFF00] shadow-[0_0_8px_rgba(204,255,0,0.4)]' : 'bg-[#27272a]';
-                    const textClass = isActive ? 'text-black font-black' : 'text-zinc-600';
-                    const isToday = i === 0;
-                    const border = isToday ? 'border border-white/50' : 'border border-transparent';
-
-                    daysHtml.push(`
-                        <div class="cal-day flex flex-col items-center justify-center w-full aspect-square rounded-md ${colorClass} ${border}" style="animation-delay: ${i*10}ms">
-                            <span class="text-[8px] ${textClass}">${parseInt(day)}</span>
-                        </div>
-                    `);
-                }
-
-                container.innerHTML = `
-                    <div class="p-4 pt-2">
-                        <div class="flex justify-between items-end mb-3">
-                             <span class="text-[9px] text-zinc-500 font-bold uppercase">Последние 5 недель</span>
-                             <div class="flex gap-2">
-                                <div class="flex items-center gap-1"><div class="w-1.5 h-1.5 rounded bg-[#27272a]"></div><span class="text-[8px] text-zinc-500">Отдых</span></div>
-                                <div class="flex items-center gap-1"><div class="w-1.5 h-1.5 rounded bg-[#CCFF00]"></div><span class="text-[8px] text-zinc-500">Зал</span></div>
-                             </div>
-                        </div>
-                        <div class="grid grid-cols-7 gap-1.5">
-                            ${daysHtml.join('')}
-                        </div>
-                    </div>
-                `;
-                return;
-            }
-                });
-
-                // 2. Генерация последних 35 дней
-                const daysHtml = [];
-                const daysToShow = 35; 
-                const today = new Date();
-
-                for (let i = daysToShow - 1; i >= 0; i--) {
-                    const d = new Date();
-                    d.setDate(today.getDate() - i);
-
-                    const day = String(d.getDate()).padStart(2, '0');
-                    const month = String(d.getMonth() + 1).padStart(2, '0');
-                    const year = d.getFullYear();
-                    const formatted = `${day}.${month}.${year}`;
-                    
-                    // Упрощенная проверка совпадения (полная дата или без года)
-                    const isActive = activeDates.has(formatted) || activeDates.has(`${day}.${month}`);
 
                     const colorClass = isActive ? 'bg-[#CCFF00] shadow-[0_0_8px_rgba(204,255,0,0.4)]' : 'bg-[#27272a]';
                     const textClass = isActive ? 'text-black font-black' : 'text-zinc-600';
