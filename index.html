@@ -227,19 +227,24 @@
             </div>
             <div id="u-records" class="space-y-3 mb-8"></div>
             <div class="flex items-center justify-between mb-3 px-1">
-                <div class="flex items-center gap-2">
-                    <h2 class="text-xs font-bold text-white uppercase tracking-widest">История</h2>
-                    <div class="relative">
-                        <select id="history-limit" onchange="updateHistoryLimit()" class="appearance-none bg-zinc-900 border border-zinc-800 text-zinc-600 hover:text-zinc-400 text-[9px] font-bold uppercase rounded-md px-2 py-0.5 outline-none focus:border-zinc-700 transition-colors cursor-pointer text-center">
+                <h2 class="text-xs font-bold text-white uppercase tracking-widest">История</h2>
+                <div class="flex items-center gap-3">
+                    <div class="relative group">
+                        <select id="history-limit" onchange="updateHistoryLimit()" class="appearance-none bg-transparent text-zinc-500 group-hover:text-zinc-300 transition-colors text-xs font-bold uppercase outline-none cursor-pointer pr-3 text-right">
                             <option value="5">Посл. 5</option>
-                            <option value="10">10</option>
-                            <option value="20">20</option>
-                            <option value="30">30</option>
-                            <option value="100">100</option>
+                            <option value="10">Посл. 10</option>
+                            <option value="20">Посл. 20</option>
+                            <option value="30">Посл. 30</option>
+                            <option value="100">Посл. 100</option>
                             <option value="all">Все</option>
                         </select>
+                        <div class="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <svg class="w-2 h-2 text-zinc-500 group-hover:text-zinc-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
                     </div>
+                    <button onclick="openModal('modal-workout')" class="edit-tool bg-zinc-800 text-[#CCFF00] px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase border border-zinc-700">+ Вручную</button>
                 </div>
+            </div>
                 <button onclick="openModal('modal-workout')" class="edit-tool bg-zinc-800 text-[#CCFF00] px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase border border-zinc-700">+ Вручную</button>
             </div>
             <div id="u-history" class="space-y-2 pb-4"></div>
