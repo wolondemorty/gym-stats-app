@@ -585,53 +585,67 @@ function renderInlineChart(type, container) {
     }
 
     if (type === 'workouts') {
-        const activeDates = new Set();
-        data.forEach(d => {
-            if (!d.date) return;
-            let raw = String(d.date).trim();
+    const activeDates = new Set();
+    data.forEach(d => {
+        if (!d.date) return;
+        let raw = String(d.date).trim();
+        let day, month, year;
 
-            // Универсальный парсер даты
-            let day, month, year;
-            if (/^\d{1,2}\.\d{1,2}\.\d{2,4}$/.test(raw)) { // DD.MM.YY или DD.MM.YYYY
-                [day, month, year] = raw.split('.');
-                day = day.padStart(2, '0');
-                month = month.padStart(2, '0');
-                if (year.length === 2) year = '20' + year;
-            } else if (/^\d{4}-\d{2}-\d{2}/.test(raw)) { // YYYY-MM-DD
-                [year, month, day] = raw.split('T')[0].split('-');
-            } else {
-                return; // нераспознанный формат
-            }
-
-            activeDates.add(`${day}.${month}.${year}`);
-        });
-
-        const daysHtml = [];
-        const daysToShow = 35; 
-        const today = new Date();
-
-        for (let i = daysToShow - 1; i >= 0; i--) {
-            const d = new Date();
-            d.setDate(today.getDate() - i);
-
-            const day = String(d.getDate()).padStart(2, '0');
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const year = d.getFullYear();
-
-            const formatted = `${day}.${month}.${year}`;
-            const isActive = activeDates.has(formatted);
-
-            const colorClass = isActive ? 'bg-[#CCFF00] shadow-[0_0_8px_rgba(204,255,0,0.4)]' : 'bg-[#27272a]';
-            const textClass = isActive ? 'text-black font-black' : 'text-zinc-600';
-            const isToday = i === 0;
-            const border = isToday ? 'border border-white/50' : 'border border-transparent';
-
-            daysHtml.push(`
-                <div class="cal-day flex flex-col items-center justify-center w-full aspect-square rounded-md ${colorClass} ${border}" style="animation-delay: ${i*10}ms">
-                    <span class="text-[8px] ${textClass}">${parseInt(day)}</span>
-                </div>
-            `);
+        if (/^\d{1,2}\.\d{1,2}\.\d{2,4}$/.test(raw)) { 
+            [day, month, year] = raw.split('.');
+            day = day.padStart(2,'0');
+            month = month.padStart(2,'0');
+            if (year.length === 2) year = '20'+year;
+        } else if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+            [year, month, day] = raw.split('T')[0].split('-');
+        } else {
+            return;
         }
+        activeDates.add(`${year}-${month}-${day}`); // храним в формате YYYY-MM-DD
+    });
+
+    const daysHtml = [];
+    const daysToShow = 35;
+    const today = new Date();
+
+    for (let i = daysToShow - 1; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(today.getDate() - i);
+
+        const day = String(d.getDate()).padStart(2,'0');
+        const month = String(d.getMonth()+1).padStart(2,'0');
+        const year = d.getFullYear();
+
+        const formatted = `${year}-${month}-${day}`;
+        const isActive = activeDates.has(formatted);
+
+        const colorClass = isActive ? 'bg-[#CCFF00] shadow-[0_0_8px_rgba(204,255,0,0.4)]' : 'bg-[#27272a]';
+        const textClass = isActive ? 'text-black font-black' : 'text-zinc-600';
+        const isToday = (d.toDateString() === today.toDateString());
+        const border = isToday ? 'border border-white/50' : 'border border-transparent';
+
+        daysHtml.push(`
+            <div class="cal-day flex flex-col items-center justify-center w-full aspect-square rounded-md ${colorClass} ${border}" style="animation-delay: ${i*10}ms">
+                <span class="text-[8px] ${textClass}">${parseInt(day)}</span>
+            </div>
+        `);
+    }
+
+    container.innerHTML = `
+        <div class="p-4 pt-2">
+            <div class="flex justify-between items-end mb-3">
+                <span class="text-[9px] text-zinc-500 font-bold uppercase">Последние 5 недель</span>
+                <div class="flex gap-2">
+                    <div class="flex items-center gap-1"><div class="w-1.5 h-1.5 rounded bg-[#27272a]"></div><span class="text-[8px] text-zinc-500">Отдых</span></div>
+                    <div class="flex items-center gap-1"><div class="w-1.5 h-1.5 rounded bg-[#CCFF00]"></div><span class="text-[8px] text-zinc-500">Зал</span></div>
+                </div>
+            </div>
+            <div class="grid grid-cols-7 gap-1.5">
+                ${daysHtml.join('')}
+            </div>
+        </div>
+    `;
+}
 
         container.innerHTML = `
             <div class="p-4 pt-2">
